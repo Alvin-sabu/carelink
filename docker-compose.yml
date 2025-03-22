@@ -3,28 +3,30 @@ version: '3.8'
 services:
   web:
     build: .
-    command: gunicorn carelink_project.wsgi:application --bind 0.0.0.0:8000
+    restart: always
     volumes:
-      - .:/app
+      - sqlite_data:/app/db
       - static_volume:/app/static
       - media_volume:/app/media
-    ports:
-      - "8000:8000"
     environment:
       - DEBUG=0
-      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,[your-ec2-ip]
-    depends_on:
-      - nginx
+      - DJANGO_ALLOWED_HOSTS=${EC2_HOST},localhost,127.0.0.1
+    expose:
+      - 8000
 
   nginx:
     image: nginx:alpine
+    restart: always
     volumes:
       - static_volume:/app/static
       - media_volume:/app/media
       - ./nginx:/etc/nginx/conf.d
     ports:
       - "80:80"
+    depends_on:
+      - web
 
 volumes:
+  sqlite_data:
   static_volume:
   media_volume: 

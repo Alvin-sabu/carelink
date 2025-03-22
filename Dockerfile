@@ -7,22 +7,23 @@ ENV PYTHONUNBUFFERED 1
 # Set work directory
 WORKDIR /app
 
-# Install system dependencies
+# Install only necessary system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
-    python3-dev \
-    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt gunicorn
 
 # Copy project
 COPY . .
+
+# Create directories for static files and media
+RUN mkdir -p /app/static /app/media
 
 # Collect static files
 RUN python manage.py collectstatic --noinput
 
 # Run gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "carelink_project.wsgi:application"] 
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "carelink_project.wsgi:application"] 
