@@ -1,0 +1,101 @@
+{% extends 'carelink/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Update Profile - {{ user.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card animate__animated animate__fadeIn">
+                <div class="card-header bg-white">
+                    <h3 class="card-title mb-0">Update Your Profile</h3>
+                    <p class="text-muted mb-0">Edit your personal information</p>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Profile Picture Section -->
+                        <div class="mb-4">
+                            <h5 class="mb-3"><i class="fas fa-camera me-2"></i>Profile Picture</h5>
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    {{ form.profile_picture|as_crispy_field }}
+                                </div>
+                                <div class="col-md-4 text-center">
+                                    <div class="profile-preview rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 150px; height: 150px; margin: 0 auto;">
+                                        {% if user.profile_picture %}
+                                            <img src="{{ user.profile_picture.url }}" alt="Current Profile Picture" class="rounded-circle" style="width: 100%; height: 100%; object-fit: cover;">
+                                        {% else %}
+                                            <i class="fas fa-user fa-3x text-muted"></i>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Personal Information -->
+                        <div class="mb-4">
+                            <h5 class="mb-3"><i class="fas fa-user me-2"></i>Personal Information</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.first_name|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.last_name|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contact Information -->
+                        <div class="mb-4">
+                            <h5 class="mb-3"><i class="fas fa-address-card me-2"></i>Contact Information</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.email|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.phone_number|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-save me-2"></i>Save Changes
+                            </button>
+                            <a href="{% url 'carelink:profile' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_javascript %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Profile Picture Preview
+    const profileInput = document.querySelector('#id_profile_picture');
+    const previewContainer = document.querySelector('.profile-preview');
+    
+    profileInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewContainer.innerHTML = `<img src="${e.target.result}" class="rounded-circle" style="width: 100%; height: 100%; object-fit: cover;">`;
+            }
+            reader.readAsDataURL(file);
+        } else {
+            previewContainer.innerHTML = '<i class="fas fa-user fa-3x text-muted"></i>';
+        }
+    });
+});
+</script>
+{% endblock %}

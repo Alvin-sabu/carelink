@@ -1,0 +1,138 @@
+{% extends 'carelink/base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-8">
+        <a href="{% url 'carelink:medication_list' %}" class="text-blue-600 hover:text-blue-800">
+            ← Back to Medications
+        </a>
+    </div>
+
+    <!-- Medication Header -->
+    <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
+        <div class="p-6">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-2xl font-bold mb-2">{{ medication.name }}</h1>
+                    <p class="text-gray-600">{{ medication.dosage }} - {{ medication.get_frequency_display }}</p>
+                </div>
+                <div class="flex space-x-4">
+                    <a href="{% url 'carelink:medication_edit' medication.id %}" 
+                       class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                        Edit Medication
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Medication Details -->
+        <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+            <div class="px-6 py-4">
+                <h2 class="text-xl font-semibold mb-4">Medication Details</h2>
+                <dl class="grid grid-cols-2 gap-4">
+                    <dt class="text-gray-600">Status</dt>
+                    <dd class="font-medium">{{ medication.get_status_display }}</dd>
+                    
+                    <dt class="text-gray-600">Start Date</dt>
+                    <dd class="font-medium">{{ medication.start_date }}</dd>
+                    
+                    <dt class="text-gray-600">End Date</dt>
+                    <dd class="font-medium">{{ medication.end_date|default:"Ongoing" }}</dd>
+                    
+                    <dt class="text-gray-600">Prescription #</dt>
+                    <dd class="font-medium">{{ medication.prescription_number }}</dd>
+                    
+                    <dt class="text-gray-600">Doctor</dt>
+                    <dd class="font-medium">{{ medication.prescribing_doctor }}</dd>
+                    
+                    <dt class="text-gray-600">Pharmacy</dt>
+                    <dd class="font-medium">{{ medication.pharmacy_name }}</dd>
+                    
+                    <dt class="text-gray-600">Refills</dt>
+                    <dd class="font-medium">{{ medication.refills_remaining }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Schedule Information -->
+        <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+            <div class="px-6 py-4">
+                <h2 class="text-xl font-semibold mb-4">Schedule</h2>
+                <div class="space-y-4">
+                    {% for schedule in schedules %}
+                    <div class="border-b pb-4">
+                        <p class="font-medium">{{ schedule.scheduled_time|time:"g:i A" }}</p>
+                        <p class="text-gray-600">Dosage: {{ schedule.dosage_amount }}</p>
+                    </div>
+                    {% empty %}
+                    <p class="text-gray-500">No schedules set</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Medication Logs -->
+        <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+            <div class="px-6 py-4">
+                <h2 class="text-xl font-semibold mb-4">Recent Logs</h2>
+                <div class="space-y-4">
+                    {% for log in logs %}
+                    <div class="border-b pb-4">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-medium">{{ log.taken_at|date:"M d, Y" }} at {{ log.taken_at|time:"g:i A" }}</p>
+                                <p class="text-gray-600">Status: {{ log.get_status_display }}</p>
+                                {% if log.notes %}
+                                <p class="text-gray-600 mt-2">{{ log.notes }}</p>
+                                {% endif %}
+                            </div>
+                            <span class="text-sm text-gray-500">
+                                By: {{ log.taken_by.get_full_name }}
+                            </span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-gray-500">No medication logs yet</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Interactions -->
+        <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+            <div class="px-6 py-4">
+                <h2 class="text-xl font-semibold mb-4">Known Interactions</h2>
+                <div class="space-y-4">
+                    {% for interaction in interactions %}
+                    <div class="border-b pb-4">
+                        <div class="flex items-center mb-2">
+                            <span class="font-medium">With: </span>
+                            <span class="ml-2">
+                                {% if interaction.medication1 == medication %}
+                                    {{ interaction.medication2.name }}
+                                {% else %}
+                                    {{ interaction.medication1.name }}
+                                {% endif %}
+                            </span>
+                        </div>
+                        <p class="text-{{ interaction.severity|lower }}-600 font-medium">
+                            Severity: {{ interaction.get_severity_display }}
+                        </p>
+                        <p class="text-gray-600 mt-2">{{ interaction.description }}</p>
+                        {% if interaction.recommendations %}
+                        <p class="text-gray-600 mt-2">
+                            <strong>Recommendations:</strong> {{ interaction.recommendations }}
+                        </p>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <p class="text-gray-500">No known interactions</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

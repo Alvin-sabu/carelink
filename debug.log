@@ -1,0 +1,195 @@
+Watching for file changes with StatReloader
+- Broken pipe from ('127.0.0.1', 65015)
+"GET /admin/carelink/patient/ HTTP/1.1" 200 13794
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/carerequest/ HTTP/1.1" 200 12548
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/carerequest/1/change/ HTTP/1.1" 200 21236
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"POST /admin/carelink/carerequest/1/change/ HTTP/1.1" 302 0
+"GET /admin/carelink/carerequest/ HTTP/1.1" 200 12777
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/patient/ HTTP/1.1" 200 13794
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+C:\Users\user\Desktop\carelink\carelink_project\carelink\admin.py changed, reloading.
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+"GET /admin/carelink/patient/ HTTP/1.1" 200 13794
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/carerequest/ HTTP/1.1" 200 12548
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/carerequest/1/change/ HTTP/1.1" 200 21239
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"POST /admin/carelink/carerequest/1/change/ HTTP/1.1" 302 0
+"GET /admin/carelink/carerequest/ HTTP/1.1" 200 12777
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/patient/ HTTP/1.1" 200 13794
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/patient/1/change/ HTTP/1.1" 200 18864
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+C:\Users\user\Desktop\carelink\carelink_project\carelink\admin.py changed, reloading.
+Watching for file changes with StatReloader
+"GET /admin/carelink/patient/1/change/ HTTP/1.1" 200 18864
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/carerequest/ HTTP/1.1" 200 12538
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/carerequest/1/change/ HTTP/1.1" 200 21239
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"POST /admin/carelink/carerequest/1/change/ HTTP/1.1" 302 0
+"GET /admin/carelink/carerequest/ HTTP/1.1" 200 12767
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/patient/ HTTP/1.1" 200 13794
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+C:\Users\user\Desktop\carelink\carelink_project\carelink\admin.py changed, reloading.
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+"GET /admin/carelink/patient/ HTTP/1.1" 200 13794
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/carerequest/ HTTP/1.1" 200 12548
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/carerequest/1/change/ HTTP/1.1" 200 21239
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"POST /admin/carelink/carerequest/1/change/ HTTP/1.1" 302 0
+"GET /admin/carelink/carerequest/ HTTP/1.1" 200 12776
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/patient/ HTTP/1.1" 200 13794
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/carerequest/ HTTP/1.1" 200 12547
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/carerequest/1/change/ HTTP/1.1" 200 21239
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"POST /admin/carelink/carerequest/1/change/ HTTP/1.1" 302 0
+"GET /admin/carelink/carerequest/ HTTP/1.1" 200 12777
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/patient/ HTTP/1.1" 200 13794
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+Watching for file changes with StatReloader
+"GET /admin/carelink/patient/ HTTP/1.1" 302 0
+"GET /admin/login/?next=/admin/carelink/patient/ HTTP/1.1" 200 4194
+"POST /admin/login/?next=/admin/carelink/patient/ HTTP/1.1" 200 4355
+"POST /admin/login/?next=/admin/carelink/patient/ HTTP/1.1" 200 4355
+Watching for file changes with StatReloader
+"POST /admin/login/?next=/admin/carelink/patient/ HTTP/1.1" 302 0
+"GET /admin/carelink/patient/ HTTP/1.1" 200 11882
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"POST /admin/logout/ HTTP/1.1" 302 0
+"GET /carelink/ HTTP/1.1" 200 11524
+"GET /static/carelink/logo.png HTTP/1.1" 404 1865
+"GET /static/carelink/images/logo.png HTTP/1.1" 404 1886
+"GET /carelink/register/ HTTP/1.1" 200 12645
+"GET /static/carelink/logo.png HTTP/1.1" 404 1865
+"POST /carelink/register/ HTTP/1.1" 302 0
+"GET /carelink/ HTTP/1.1" 302 0
+"GET /carelink/caregiver/dashboard/ HTTP/1.1" 200 14684
+"GET /static/carelink/logo.png HTTP/1.1" 404 1865
+"POST /accounts/logout/ HTTP/1.1" 302 0
+"GET /accounts/login/ HTTP/1.1" 200 10561
+"GET /static/carelink/logo.png HTTP/1.1" 404 1865
+"GET /carelink/register/ HTTP/1.1" 200 12645
+"GET /static/carelink/logo.png HTTP/1.1" 404 1865
+"POST /carelink/register/ HTTP/1.1" 302 0
+"GET /carelink/ HTTP/1.1" 302 0
+"GET /carelink/family/dashboard/ HTTP/1.1" 200 11399
+"GET /static/carelink/logo.png HTTP/1.1" 404 1865
+"POST /carelink/submit-care-request/ HTTP/1.1" 302 0
+"GET /carelink/family/dashboard/ HTTP/1.1" 200 11399
+"GET /static/carelink/logo.png HTTP/1.1" 404 1865
+"POST /accounts/logout/ HTTP/1.1" 302 0
+"GET /accounts/login/ HTTP/1.1" 200 10561
+"GET /static/carelink/logo.png HTTP/1.1" 404 1865
+"GET /admin/ HTTP/1.1" 302 0
+"GET /admin/login/?next=/admin/ HTTP/1.1" 200 4302
+"POST /admin/login/?next=/admin/ HTTP/1.1" 302 0
+"GET /admin/ HTTP/1.1" 200 10513
+"GET /admin/carelink/patient/ HTTP/1.1" 200 11882
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/carerequest/ HTTP/1.1" 200 12554
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/carerequest/1/change/ HTTP/1.1" 200 21070
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"POST /admin/carelink/carerequest/1/change/ HTTP/1.1" 302 0
+"GET /admin/carelink/carerequest/ HTTP/1.1" 200 12784
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/patient/ HTTP/1.1" 200 11882
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"POST /admin/logout/ HTTP/1.1" 302 0
+"GET /carelink/ HTTP/1.1" 200 11524
+"GET /static/carelink/logo.png HTTP/1.1" 404 1865
+"GET /static/carelink/images/logo.png HTTP/1.1" 404 1886
+"GET /accounts/login/ HTTP/1.1" 200 10561
+"GET /static/carelink/logo.png HTTP/1.1" 404 1865
+"POST /accounts/login/ HTTP/1.1" 302 0
+"GET /carelink/ HTTP/1.1" 302 0
+"GET /carelink/caregiver/dashboard/ HTTP/1.1" 200 14684
+"GET /static/carelink/logo.png HTTP/1.1" 404 1865
+"POST /accounts/logout/ HTTP/1.1" 302 0
+"GET /accounts/login/ HTTP/1.1" 200 10561
+"GET /static/carelink/logo.png HTTP/1.1" 404 1865
+"POST /accounts/login/ HTTP/1.1" 302 0
+"GET /carelink/ HTTP/1.1" 302 0
+"GET /carelink/family/dashboard/ HTTP/1.1" 200 10361
+"GET /static/carelink/logo.png HTTP/1.1" 404 1865
+"POST /accounts/logout/ HTTP/1.1" 302 0
+"GET /accounts/login/ HTTP/1.1" 200 10561
+"GET /static/carelink/logo.png HTTP/1.1" 404 1865
+"GET /admin/ HTTP/1.1" 302 0
+"GET /admin/login/?next=/admin/ HTTP/1.1" 200 4160
+"POST /admin/login/?next=/admin/ HTTP/1.1" 302 0
+"GET /admin/ HTTP/1.1" 200 10924
+"GET /admin/carelink/carerequest/ HTTP/1.1" 200 12555
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/carerequest/?o=1 HTTP/1.1" 200 12845
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/carerequest/1/change/?_changelist_filters=o%3D1 HTTP/1.1" 200 21177
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+C:\Users\user\Desktop\carelink\carelink_project\carelink\admin.py changed, reloading.
+Watching for file changes with StatReloader
+"GET /admin/carelink/carerequest/1/change/?_changelist_filters=o%3D1 HTTP/1.1" 200 21177
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"POST /admin/carelink/carerequest/1/change/?_changelist_filters=o%3D1 HTTP/1.1" 302 0
+"GET /admin/carelink/carerequest/?o=1 HTTP/1.1" 200 13074
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/patient/ HTTP/1.1" 200 11882
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/carerequest/ HTTP/1.1" 200 12555
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/carerequest/?o=1 HTTP/1.1" 200 12845
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/carerequest/ HTTP/1.1" 200 12555
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/patient/add/ HTTP/1.1" 200 18454
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+C:\Users\user\Desktop\carelink\carelink_project\carelink\admin.py changed, reloading.
+Watching for file changes with StatReloader
+"GET /admin/carelink/carerequest/ HTTP/1.1" 200 12555
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/carerequest/1/change/ HTTP/1.1" 200 21089
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"POST /admin/carelink/carerequest/1/change/ HTTP/1.1" 302 0
+"GET /admin/carelink/carerequest/ HTTP/1.1" 200 12784
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/carerequest/1/change/ HTTP/1.1" 200 21089
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"POST /admin/carelink/carerequest/1/change/ HTTP/1.1" 302 0
+"GET /admin/carelink/carerequest/ HTTP/1.1" 200 12784
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/patient/ HTTP/1.1" 200 11882
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+C:\Users\user\Desktop\carelink\carelink_project\carelink\admin.py changed, reloading.
+Watching for file changes with StatReloader
+C:\Users\user\Desktop\carelink\carelink_project\carelink\admin.py changed, reloading.
+Watching for file changes with StatReloader
+"GET /admin/carelink/patient/ HTTP/1.1" 200 11882
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/carerequest/ HTTP/1.1" 200 12555
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/carerequest/1/change/ HTTP/1.1" 200 21089
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"POST /admin/carelink/carerequest/1/change/ HTTP/1.1" 302 0
+"GET /admin/carelink/carerequest/ HTTP/1.1" 200 12784
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+"GET /admin/carelink/patient/ HTTP/1.1" 200 11882
+"GET /admin/jsi18n/ HTTP/1.1" 200 3342
+C:\Users\user\Desktop\carelink\carelink_project\carelink\admin.py changed, reloading.
+Watching for file changes with StatReloader
+C:\Users\user\Desktop\carelink\carelink_project\carelink_project\settings.py changed, reloading.

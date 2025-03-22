@@ -1,0 +1,138 @@
+{% extends 'carelink/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4" id="recommendationsContainer">
+    <div class="card">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h3 class="mb-0">Health Recommendations</h3>
+            <button class="btn btn-light" onclick="downloadPDF()">
+                <i class="fas fa-download"></i> Download PDF
+            </button>
+        </div>
+        <div class="card-body" id="recommendationsContent">
+            <div class="text-center mb-4">
+                <h4 id="patientName"></h4>
+                <p id="generatedDate" class="text-muted"></p>
+            </div>
+            
+            <div id="recommendationsList" class="mt-4">
+                <!-- Recommendations will be inserted here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include html2pdf library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get patient ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const patientId = urlParams.get('patient_id');
+    
+    if (patientId) {
+        fetchRecommendations(patientId);
+    }
+});
+
+function fetchRecommendations(patientId) {
+    fetch(`/get_ai_recommendations/${patientId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayRecommendations(data);
+            } else {
+                showError(data.error);
+            }
+        })
+        .catch(error => {
+            showError('Failed to fetch recommendations');
+        });
+}
+
+function displayRecommendations(data) {
+    // Update patient name and date
+    document.getElementById('patientName').textContent = data.patient_name;
+    document.getElementById('generatedDate').textContent = `Generated on: ${new Date(data.generated_at).toLocaleDateString()}`;
+    
+    // Clear existing recommendations
+    const recommendationsList = document.getElementById('recommendationsList');
+    recommendationsList.innerHTML = '';
+    
+    // Add each recommendation
+    data.recommendations.forEach(rec => {
+        const recDiv = document.createElement('div');
+        recDiv.className = 'mb-4 p-3 border-bottom';
+        recDiv.innerHTML = `
+            <h5 class="text-primary">${rec.title}</h5>
+            <p class="text-muted">${rec.description}</p>
+        `;
+        recommendationsList.appendChild(recDiv);
+    });
+}
+
+function showError(message) {
+    const recommendationsList = document.getElementById('recommendationsList');
+    recommendationsList.innerHTML = `
+        <div class="alert alert-danger">
+            ${message}
+        </div>
+    `;
+}
+
+function downloadPDF() {
+    const element = document.getElementById('recommendationsContent');
+    const opt = {
+        margin: 1,
+        filename: 'health_recommendations.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+    
+    // Apply PDF-specific styling
+    element.style.padding = '20px';
+    
+    html2pdf().set(opt).from(element).save().then(() => {
+        // Reset styling
+        element.style.padding = '';
+    });
+}
+</script>
+
+<style>
+@media print {
+    .btn {
+        display: none !important;
+    }
+    
+    .card {
+        border: none !important;
+    }
+    
+    .card-header {
+        background-color: #fff !important;
+        color: #000 !important;
+    }
+}
+
+#recommendationsContent {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.recommendation-item {
+    border-left: 4px solid #007bff;
+    padding-left: 15px;
+    margin-bottom: 20px;
+}
+
+@media (min-width: 768px) {
+    .container {
+        max-width: 800px;
+    }
+}
+</style>
+{% endblock %}

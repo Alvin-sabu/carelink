@@ -1,0 +1,317 @@
+{% extends "carelink/base.html" %}
+{% load static %}
+
+{% block title %}Task Management - CareLink{% endblock %}
+
+{% block content %}
+<style>
+/* Complete Task Button */
+.complete-btn {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    font-size: 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.complete-btn:hover {
+    background-color: #218838;
+}
+
+/* Approve Button */
+.approve-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    font-size: 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.approve-btn:hover {
+    background-color: #0056b3;
+}
+
+/* Disabled Button Style */
+.complete-btn:disabled,
+.approve-btn:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
+/* Success Message */
+.success-msg {
+    display: none;
+    color: green;
+    font-size: 14px;
+    margin-left: 10px;
+}
+
+/* Task category badges */
+.badge-medication {
+    background-color: #e53e3e;
+}
+.badge-health-check {
+    background-color: #3182ce;
+}
+.badge-appointment {
+    background-color: #805ad5;
+}
+.badge-exercise {
+    background-color: #38a169;
+}
+.badge-general {
+    background-color: #718096;
+}
+</style>
+<div class="container-fluid px-4 py-5">
+    <div class="card border-0 shadow-sm bg-white mb-4">
+        <div class="card-body p-4" style="background: linear-gradient(to right, #f5f8ff, #ffffff);">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1 fw-bold" style="color: #2c5282;">Task Management</h2>
+                    <p class="text-muted mb-0">View and manage all your tasks in one place</p>
+                </div>
+                {% if user.user_type == 'CAREGIVER' %}
+                <a href="{% url 'carelink:add_task' %}" class="btn px-3" style="background-color: #3182ce; color: white; border: none;">
+                    <i class="fas fa-plus me-2"></i>Add New Task
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Tasks -->
+    <div class="card shadow-sm mb-4 animate__animated animate__fadeIn">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-bold text-primary">
+                <i class="fas fa-clock me-2"></i>Pending Tasks
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if pending_tasks %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Title</th>
+                            <th>Category</th>
+                            <th>Patient</th>
+                            <th>Due Date</th>
+                            <th>Priority</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in pending_tasks %}
+                        <tr>
+                            <td>{{ task.title }}</td>
+                            <td>
+                                <span class="badge rounded-pill badge-{{ task.category|lower }}">
+                                    {{ task.get_category_display }}
+                                </span>
+                            </td>
+                            <td>{{ task.patient.get_full_name }}</td>
+                            <td>{{ task.due_date|date:"M d, Y H:i" }}</td>
+                            <td>
+                                {% if task.priority == 'HIGH' %}
+                                <span class="badge bg-danger">High</span>
+                                {% elif task.priority == 'MEDIUM' %}
+                                <span class="badge bg-warning text-dark">Medium</span>
+                                {% else %}
+                                <span class="badge bg-info text-dark">Low</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="complete-btn" onclick="TaskManager.markForReview({{ task.id }})" id="complete-btn-{{ task.id }}">
+                                    Mark Complete
+                                </button>
+                                <span class="success-msg" id="success-msg-{{ task.id }}">Marked for review!</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>No pending tasks at the moment.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Pending Review Tasks -->
+    <div class="card shadow-sm mb-4 animate__animated animate__fadeIn">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-bold text-info">
+                <i class="fas fa-hourglass-half me-2"></i>Pending Review Tasks
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if pending_review_tasks %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Title</th>
+                            <th>Category</th>
+                            <th>Patient</th>
+                            <th>Due Date</th>
+                            <th>Priority</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in pending_review_tasks %}
+                        <tr>
+                            <td>{{ task.title }}</td>
+                            <td>
+                                <span class="badge rounded-pill badge-{{ task.category|lower }}">
+                                    {{ task.get_category_display }}
+                                </span>
+                            </td>
+                            <td>{{ task.patient.get_full_name }}</td>
+                            <td>{{ task.due_date|date:"M d, Y H:i" }}</td>
+                            <td>
+                                {% if task.priority == 'HIGH' %}
+                                <span class="badge bg-danger">High</span>
+                                {% elif task.priority == 'MEDIUM' %}
+                                <span class="badge bg-warning text-dark">Medium</span>
+                                {% else %}
+                                <span class="badge bg-info text-dark">Low</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if user.is_staff %}
+                                <button class="approve-btn" onclick="TaskManager.approveTask({{ task.id }})" id="approve-btn-{{ task.id }}">
+                                    Approve
+                                </button>
+                                <span class="success-msg" id="approve-msg-{{ task.id }}">Approved!</span>
+                                {% else %}
+                                <span class="badge bg-info">Awaiting Admin Review</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>No tasks pending review.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Completed Tasks -->
+    <div class="card shadow-sm animate__animated animate__fadeIn">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-bold text-success">
+                <i class="fas fa-check-circle me-2"></i>Completed Tasks
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if completed_tasks %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Title</th>
+                            <th>Category</th>
+                            <th>Patient</th>
+                            <th>Completed Date</th>
+                            <th>Priority</th>
+                            <th>Approved By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in completed_tasks %}
+                        <tr>
+                            <td>{{ task.title }}</td>
+                            <td>
+                                <span class="badge rounded-pill badge-{{ task.category|lower }}">
+                                    {{ task.get_category_display }}
+                                </span>
+                            </td>
+                            <td>{{ task.patient.get_full_name }}</td>
+                            <td>{{ task.completed_at|date:"M d, Y H:i" }}</td>
+                            <td>
+                                {% if task.priority == 'HIGH' %}
+                                <span class="badge bg-danger">High</span>
+                                {% elif task.priority == 'MEDIUM' %}
+                                <span class="badge bg-warning text-dark">Medium</span>
+                                {% else %}
+                                <span class="badge bg-info text-dark">Low</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ task.reviewed_by.get_full_name }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>No completed tasks yet.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/task_management.js' %}"></script>
+<script>
+document.body.dataset.isStaff = "{{ user.is_staff|yesno:'true,false' }}";
+
+// Update UI after task status change
+function updateTaskUI(taskId, action, message) {
+    const button = document.getElementById(`${action}-btn-${taskId}`);
+    const successMsg = document.getElementById(`${action}-msg-${taskId}`);
+    
+    if (button) button.disabled = true;
+    if (successMsg) {
+        successMsg.style.display = 'inline';
+        successMsg.textContent = message;
+    }
+    
+    // Reload page after a short delay
+    setTimeout(() => {
+        window.location.reload();
+    }, 1000);
+}
+
+// Error handling
+function handleError(taskId, action, error) {
+    const button = document.getElementById(`${action}-btn-${taskId}`);
+    if (button) {
+        button.disabled = false;
+        button.innerHTML = action === 'complete' ? 'Mark Complete' : 'Approve';
+    }
+    alert('Error: ' + (error.message || 'An error occurred. Please try again.'));
+}
+
+// Add event listeners for task actions
+document.addEventListener('DOMContentLoaded', function() {
+    // Override TaskManager's default UI update
+    TaskManager.onTaskStatusChange = function(taskId, status) {
+        const action = status === 'PENDING_REVIEW' ? 'complete' : 'approve';
+        const message = status === 'PENDING_REVIEW' ? 'Marked for review!' : 'Approved!';
+        updateTaskUI(taskId, action, message);
+    };
+
+    // Override TaskManager's error handling
+    TaskManager.onError = function(taskId, action, error) {
+        handleError(taskId, action, error);
+    };
+});
+</script>
+{% endblock %}

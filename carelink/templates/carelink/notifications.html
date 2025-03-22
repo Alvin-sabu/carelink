@@ -1,0 +1,139 @@
+<!-- templates/carelink/notifications.html -->
+{% extends 'carelink/base.html' %}
+
+{% block title %}Notifications - CareLink{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0 text-primary">
+                            <i class="fas fa-bell me-2"></i>Notifications
+                        </h5>
+                        <p class="text-muted mb-0 mt-1">Stay updated with your latest alerts and updates</p>
+                    </div>
+                    {% if notifications %}
+                    <button class="btn btn-outline-secondary btn-sm" id="markAllRead">
+                        <i class="fas fa-check-double me-1"></i>Mark All as Read
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% for notification in notifications %}
+                    <div class="card mb-3 border-0 shadow-sm notification-card {% if not notification.is_read %}border-start border-4 border-primary{% endif %}" 
+                         data-notification-id="{{ notification.id }}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="notification-content">
+                                    <div class="d-flex align-items-center mb-2">
+                                        {% if notification.type == 'TASK' %}
+                                            <i class="fas fa-tasks text-primary me-2"></i>
+                                        {% elif notification.type == 'HEALTH' %}
+                                            <i class="fas fa-heartbeat text-danger me-2"></i>
+                                        {% elif notification.type == 'MESSAGE' %}
+                                            <i class="fas fa-envelope text-success me-2"></i>
+                                        {% else %}
+                                            <i class="fas fa-info-circle text-info me-2"></i>
+                                        {% endif %}
+                                        <h6 class="mb-0 {% if not notification.is_read %}fw-bold{% endif %}">
+                                            {{ notification.title }}
+                                        </h6>
+                                    </div>
+                                    <p class="mb-2 text-muted">{{ notification.message }}</p>
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock me-1"></i>{{ notification.created_at|timesince }} ago
+                                    </small>
+                                </div>
+                                {% if not notification.is_read %}
+                                <span class="badge bg-primary rounded-pill">New</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-bell-slash text-muted fa-3x mb-3"></i>
+                        <p class="text-muted mb-0">No notifications to display.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+$(document).ready(function() {
+    // Mark all notifications as read
+    $('#markAllRead').click(function() {
+        $.ajax({
+            url: "{% url 'carelink:mark_all_notifications_read' %}",
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Remove all unread indicators
+                    $('.notification-card').removeClass('border-start border-4 border-primary');
+                    $('.notification-card .badge').remove();
+                    $('.notification-content h6').removeClass('fw-bold');
+                    // Hide the mark all as read button
+                    $('#markAllRead').fadeOut();
+                    // Show success message
+                    const alert = $('<div class="alert alert-success alert-dismissible fade show" role="alert">')
+                        .text('All notifications marked as read')
+                        .append('<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>');
+                    $('.card-header').after(alert);
+                }
+            },
+            error: function(xhr) {
+                const alert = $('<div class="alert alert-danger alert-dismissible fade show" role="alert">')
+                    .text('Error marking notifications as read. Please try again.')
+                    .append('<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>');
+                $('.card-header').after(alert);
+            }
+        });
+    });
+
+    // Individual notification click handler
+    $('.notification-card').click(function() {
+        const card = $(this);
+        const notificationId = card.data('notification-id');
+        
+        if (card.hasClass('border-primary')) {
+            $.ajax({
+                url: "{% url 'carelink:mark_notification_read' 0 %}".replace('0', notificationId),
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        card.removeClass('border-start border-4 border-primary');
+                        card.find('.badge').remove();
+                        card.find('.notification-content h6').removeClass('fw-bold');
+                        
+                        // Check if there are any remaining unread notifications
+                        if ($('.notification-card.border-primary').length === 0) {
+                            $('#markAllRead').fadeOut();
+                        }
+                    }
+                },
+                error: function(xhr) {
+                    const alert = $('<div class="alert alert-danger alert-dismissible fade show" role="alert">')
+                        .text('Error marking notification as read. Please try again.')
+                        .append('<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>');
+                    $('.card-header').after(alert);
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

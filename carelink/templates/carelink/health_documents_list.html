@@ -1,0 +1,515 @@
+{% extends 'carelink/base.html' %}
+{% load static %}
+
+{% block title %}Health Documents - CareLink{% endblock %}
+
+{% block extra_css %}
+<style>
+  :root {
+    --primary-color: #2c6ba0;
+    --secondary-color: #3d8bcd;
+    --accent-color: #e9f2fa;
+    --success-color: #2e7d52;
+    --danger-color: #d32f2f;
+    --text-primary: #212b36;
+    --text-secondary: #637381;
+    --border-color: #e0e0e0;
+  }
+  
+  .btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+  }
+  
+  .btn-primary:hover {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+  }
+  
+  .btn-outline-primary {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+  }
+  
+  .btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+  }
+  
+  .text-primary {
+    color: var(--primary-color) !important;
+  }
+  
+  .bg-subtle {
+    background-color: var(--accent-color);
+  }
+  
+  .document-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  
+  .document-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  .card {
+    border: none;
+    border-radius: 12px;
+  }
+  
+  .card-header {
+    background-color: white;
+    border-bottom: 1px solid var(--border-color);
+    padding: 1.25rem 1.5rem;
+  }
+  
+  .section-title {
+    color: var(--primary-color);
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  
+  .document-icon {
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background-color: var(--accent-color);
+    transition: transform 0.2s ease;
+  }
+  
+  .document-card:hover .document-icon {
+    transform: scale(1.1);
+  }
+  
+  .security-icon {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: var(--accent-color);
+    color: var(--primary-color);
+    transition: transform 0.2s ease;
+  }
+  
+  .security-feature:hover .security-icon {
+    transform: scale(1.1);
+  }
+  
+  .document-meta {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+  }
+  
+  .document-type-badge {
+    background-color: var(--accent-color);
+    color: var(--primary-color);
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+  }
+  
+  .filter-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+  }
+  
+  .filter-btn.active {
+    background-color: var(--primary-color);
+    color: white;
+  }
+  
+  .document-actions {
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+  }
+  
+  .document-card:hover .document-actions {
+    opacity: 1;
+  }
+  
+  .upload-zone {
+    border: 2px dashed var(--border-color);
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .upload-zone:hover {
+    border-color: var(--primary-color);
+    background-color: var(--accent-color);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-7">
+            <h1 class="h2 mb-2 section-title">
+                <i class="fas fa-folder-medical me-2"></i>
+                Medical Records Repository
+            </h1>
+            <p class="text-secondary mb-0">Secure storage and management of your healthcare documentation</p>
+        </div>
+        <div class="col-md-5 text-md-end mt-3 mt-md-0">
+            <button type="button" class="btn btn-primary rounded-pill shadow-sm" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                <i class="fas fa-file-medical me-2"></i>
+                Upload New Document
+            </button>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm rounded-3" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <h5 class="mb-0 section-title">
+                        <i class="fas fa-file-alt me-2"></i>
+                        Document Library
+                    </h5>
+                </div>
+                <div class="col-md-8">
+                    <div class="d-flex justify-content-md-end align-items-center mt-3 mt-md-0">
+                        <div class="me-3">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0">
+                                    <i class="fas fa-search text-muted"></i>
+                                </span>
+                                <input type="text" class="form-control border-start-0" id="documentSearch" 
+                                       placeholder="Search documents...">
+                            </div>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
+                                    id="filterDropdown" data-bs-toggle="dropdown">
+                                <i class="fas fa-filter me-1"></i>
+                                Filter
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item active" href="#" data-filter="all">All Documents</a></li>
+                                <li><a class="dropdown-item" href="#" data-filter="pdf">PDF Files</a></li>
+                                <li><a class="dropdown-item" href="#" data-filter="image">Images</a></li>
+                                <li><a class="dropdown-item" href="#" data-filter="other">Other Files</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% if documents %}
+            <div class="card-body p-4">
+                <div class="row g-4" id="documentGrid">
+                    {% for document in documents %}
+                        <div class="col-md-6 col-lg-4 document-item" 
+                             data-type="{{ document.document.name|slice:'-3:'|lower }}">
+                            <div class="card h-100 shadow-sm document-card">
+                                <div class="card-body p-4">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="document-icon me-3">
+                                            {% if document.document.name|lower|slice:"-3:" == 'pdf' %}
+                                                <i class="fas fa-file-pdf fa-lg text-danger"></i>
+                                            {% elif document.document.name|lower|slice:"-3:" in 'jpg,png,gif' %}
+                                                <i class="fas fa-file-image fa-lg text-success"></i>
+                                            {% else %}
+                                                <i class="fas fa-file-medical fa-lg text-primary"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold text-dark">{{ document.title }}</h6>
+                                            <div class="document-meta d-flex align-items-center mt-1">
+                                                <i class="fas fa-calendar-alt me-1"></i>
+                                                {{ document.uploaded_at|date:"F j, Y" }}
+                                                <span class="mx-2">•</span>
+                                                <i class="fas fa-user me-1"></i>
+                                                {{ document.user.get_full_name }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {% if document.description %}
+                                        <p class="small mb-3 text-secondary">{{ document.description|truncatewords:15 }}</p>
+                                    {% endif %}
+
+                                    <div class="d-flex justify-content-between align-items-center document-actions">
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'carelink:health_document_detail' document.pk %}" 
+                                               class="btn btn-outline-primary">
+                                                <i class="fas fa-eye me-1"></i>
+                                                View
+                                            </a>
+                                            {% if request.user == document.user %}
+                                                <a href="{% url 'carelink:health_document_update' document.pk %}" 
+                                                   class="btn btn-outline-secondary">
+                                                    <i class="fas fa-edit me-1"></i>
+                                                    Edit
+                                                </a>
+                                                <button type="button" class="btn btn-outline-danger"
+                                                        onclick="confirmDelete('{% url 'carelink:health_document_delete' document.pk %}')">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                        <span class="document-type-badge">
+                                            {{ document.document.name|slice:"-3:"|upper }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% else %}
+            <div class="card-body">
+                <div class="text-center py-5 bg-subtle mx-3 my-3 rounded-3">
+                    <i class="fas fa-folder-open text-primary fa-3x mb-3 opacity-75"></i>
+                    <h3 class="h5 text-primary">No Documents Found</h3>
+                    <p class="text-secondary mb-4">Start building your medical document repository by uploading your first document.</p>
+                    <button type="button" class="btn btn-primary rounded-pill px-4" 
+                            data-bs-toggle="modal" data-bs-target="#uploadModal">
+                        <i class="fas fa-file-medical me-2"></i>
+                        Upload First Document
+                    </button>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="card shadow-sm bg-white">
+        <div class="card-header">
+            <h5 class="mb-0 section-title">
+                <i class="fas fa-shield-alt me-2"></i>
+                Document Security & Compliance
+            </h5>
+        </div>
+        <div class="card-body py-4">
+            <div class="row">
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <div class="d-flex security-feature">
+                        <div class="security-icon me-3">
+                            <i class="fas fa-shield-alt fa-lg"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold">HIPAA Compliant</h6>
+                            <p class="small text-secondary mb-0">All documents are stored securely in compliance with HIPAA regulations</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <div class="d-flex security-feature">
+                        <div class="security-icon me-3">
+                            <i class="fas fa-lock fa-lg"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold">End-to-End Encryption</h6>
+                            <p class="small text-secondary mb-0">Your medical data is protected with enterprise-grade encryption</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="d-flex security-feature">
+                        <div class="security-icon me-3">
+                            <i class="fas fa-history fa-lg"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold">Version Control</h6>
+                            <p class="small text-secondary mb-0">Track document history and maintain audit trails</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title section-title">
+                    <i class="fas fa-cloud-upload-alt me-2"></i>
+                    Upload Document
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{% url 'carelink:health_document_create' %}" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="upload-zone mb-3" id="dropZone">
+                        <i class="fas fa-cloud-upload-alt fa-2x text-primary mb-3"></i>
+                        <h6 class="mb-2">Drag and drop your file here</h6>
+                        <p class="small text-secondary mb-3">or</p>
+                        <label class="btn btn-outline-primary rounded-pill">
+                            <i class="fas fa-folder-open me-2"></i>
+                            Browse Files
+                            <input type="file" name="document" style="display: none;" required>
+                        </label>
+                        <p class="small text-muted mt-2 mb-0">Maximum file size: 10MB</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Document Title</label>
+                        <input type="text" name="title" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description (Optional)</label>
+                        <textarea name="description" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload me-2"></i>
+                            Upload Document
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Confirm Delete
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to permanently delete this document? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <a href="#" id="confirmDeleteBtn" class="btn btn-danger">
+                    <i class="fas fa-trash-alt me-2"></i>
+                    Delete Document
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+$(document).ready(function() {
+    // Document search functionality
+    $('#documentSearch').on('input', function() {
+        const searchTerm = $(this).val().toLowerCase();
+        $('.document-item').each(function() {
+            const title = $(this).find('h6').text().toLowerCase();
+            const description = $(this).find('p').text().toLowerCase();
+            if (title.includes(searchTerm) || description.includes(searchTerm)) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    });
+
+    // Document filtering
+    $('.dropdown-item').click(function(e) {
+        e.preventDefault();
+        const filter = $(this).data('filter');
+        
+        $('.dropdown-item').removeClass('active');
+        $(this).addClass('active');
+        
+        if (filter === 'all') {
+            $('.document-item').show();
+        } else {
+            $('.document-item').each(function() {
+                const type = $(this).data('type');
+                if (filter === 'image' && ['jpg', 'png', 'gif'].includes(type)) {
+                    $(this).show();
+                } else if (filter === type) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        }
+    });
+
+    // File upload preview
+    $('input[type="file"]').change(function(e) {
+        const fileName = e.target.files[0].name;
+        $(this).closest('.upload-zone').find('h6').text(fileName);
+    });
+
+    // Drag and drop functionality
+    const dropZone = document.getElementById('dropZone');
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight(e) {
+        dropZone.classList.add('bg-subtle');
+    }
+
+    function unhighlight(e) {
+        dropZone.classList.remove('bg-subtle');
+    }
+
+    dropZone.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        const fileInput = document.querySelector('input[type="file"]');
+        
+        fileInput.files = files;
+        $(fileInput).trigger('change');
+    }
+});
+
+// Delete confirmation
+function confirmDelete(deleteUrl) {
+    $('#confirmDeleteBtn').attr('href', deleteUrl);
+    $('#deleteModal').modal('show');
+}
+</script>
+{% endblock %}

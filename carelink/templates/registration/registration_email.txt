@@ -1,0 +1,19 @@
+Welcome to CareLink!
+
+Dear {{ user.first_name }},
+
+Thank you for registering with CareLink! We're excited to have you join our healthcare management platform.
+
+Your account has been successfully created with the following details:
+- Username: {{ user.username }}
+- Email: {{ user.email }}
+- Account Type: {{ user.get_user_type_display }}
+
+To get started with CareLink, please verify your email address by visiting this link:
+{{ verification_url }}
+
+For security reasons, this verification link will expire in 24 hours.
+
+This is an automated message from CareLink. Please do not reply to this email.
+
+© {% now "Y" %} CareLink. All rights reserved. 

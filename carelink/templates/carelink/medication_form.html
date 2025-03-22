@@ -1,0 +1,101 @@
+{% extends 'carelink/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-8">
+        <a href="{% url 'carelink:medication_list' %}" class="text-blue-600 hover:text-blue-800">
+            ← Back to Medications
+        </a>
+    </div>
+
+    <div class="max-w-3xl mx-auto">
+        <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold mb-6">
+                    {% if medication %}Edit{% else %}Add New{% endif %} Medication
+                </h1>
+
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
+                    
+                    <!-- Main Medication Information -->
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Patient Selection -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Patient</label>
+                                {{ form.patient }}
+                                {% if form.patient.errors %}
+                                <p class="text-red-500 text-xs mt-1">{{ form.patient.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Medication Name -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Medication Name</label>
+                                {{ form.name }}
+                                {% if form.name.errors %}
+                                <p class="text-red-500 text-xs mt-1">{{ form.name.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Dosage -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Dosage</label>
+                                {{ form.dosage }}
+                                {% if form.dosage.errors %}
+                                <p class="text-red-500 text-xs mt-1">{{ form.dosage.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Frequency -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Frequency</label>
+                                {{ form.frequency }}
+                                {% if form.frequency.errors %}
+                                <p class="text-red-500 text-xs mt-1">{{ form.frequency.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Start Date -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Start Date</label>
+                                {{ form.start_date }}
+                                {% if form.start_date.errors %}
+                                <p class="text-red-500 text-xs mt-1">{{ form.start_date.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- End Date -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">End Date (Optional)</label>
+                                {{ form.end_date }}
+                                {% if form.end_date.errors %}
+                                <p class="text-red-500 text-xs mt-1">{{ form.end_date.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Prescription Information -->
+                    <div class="border-t pt-6 space-y-4">
+                        <h2 class="text-lg font-semibold mb-4">Prescription Information</h2>
+                        <!-- Add prescription information fields here -->
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                            {% if medication %}Update{% else %}Add{% endif %} Medication
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

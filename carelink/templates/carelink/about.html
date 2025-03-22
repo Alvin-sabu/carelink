@@ -1,0 +1,96 @@
+{% extends 'carelink/base.html' %}
+{% load static %}
+
+{% block title %}About Us - CareLink{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <h1 class="text-primary mb-4">About CareLink</h1>
+            
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h2 class="h4 text-primary">Our Mission</h2>
+                    <p class="lead">
+                        To revolutionize healthcare management by connecting caregivers and families through technology, 
+                        ensuring the highest quality of care for your loved ones.
+                    </p>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <h3 class="h5 text-primary">Who We Are</h3>
+                            <p>
+                                CareLink is a dedicated team of healthcare professionals and technology experts committed to 
+                                improving the quality of care through innovative solutions. We understand the challenges of 
+                                managing healthcare needs and strive to make it easier for both families and caregivers.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <h3 class="h5 text-primary">What We Do</h3>
+                            <p>
+                                We provide a comprehensive healthcare management platform that enables real-time monitoring, 
+                                efficient communication, and detailed health tracking. Our system helps coordinate care between 
+                                family members and professional caregivers.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h2 class="h4 text-primary">Our Values</h2>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success"></i>
+                                    <strong>Excellence</strong> in healthcare delivery
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success"></i>
+                                    <strong>Innovation</strong> in technology solutions
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success"></i>
+                                    <strong>Compassion</strong> in patient care
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success"></i>
+                                    <strong>Integrity</strong> in all interactions
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success"></i>
+                                    <strong>Privacy</strong> and data security
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success"></i>
+                                    <strong>Reliability</strong> in service delivery
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <a href="{% url 'carelink:contact' %}" class="btn btn-primary">Contact Us</a>
+                <a href="{% url 'carelink:register' %}" class="btn btn-outline-primary ms-2">Join CareLink</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

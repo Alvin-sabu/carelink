@@ -1,0 +1,156 @@
+{% extends 'carelink/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Login - CareLink{% endblock %}
+
+{% block content %}
+<style>
+    /* Login Page Styling */
+    .login-container {
+        max-width: 500px;
+        margin: auto;
+        padding: 40px 20px;
+    }
+
+    .card {
+        border-radius: 12px;
+        overflow: hidden;
+        border: none;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+        text-align: center;
+        padding: 25px;
+    }
+
+    .card-title {
+        font-weight: bold;
+        color: #007bff;
+    }
+
+    .btn-primary {
+        background: #007bff;
+        border: none;
+        transition: all 0.3s ease-in-out;
+        font-size: 1.1rem;
+        padding: 12px;
+    }
+
+    .btn-primary:hover {
+        background: #0056b3;
+        transform: scale(1.03);
+    }
+
+    .text-muted {
+        font-size: 0.95rem;
+    }
+
+    .text-primary {
+        font-weight: 600;
+    }
+
+    .alert {
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .feature-box {
+        padding: 20px;
+    }
+
+    .feature-box i {
+        transition: transform 0.3s ease-in-out;
+    }
+
+    .feature-box:hover i {
+        transform: scale(1.2);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .login-container {
+            padding: 20px;
+        }
+
+        .card {
+            margin-top: 20px;
+        }
+    }
+</style>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="login-container">
+            <div class="card animate__animated animate__fadeIn">
+                <div class="card-header">
+                    <h3 class="card-title">Welcome Back</h3>
+                    <p class="text-muted">Sign in to your CareLink account</p>
+                </div>
+                <div class="card-body p-4">
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger" role="alert">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary shadow-sm">
+                                <i class="fas fa-sign-in-alt me-2"></i> Sign In
+                            </button>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <p class="mb-2">
+                                <a href="{% url 'carelink:password_reset' %}" class="text-decoration-none text-primary">
+                                    <i class="fas fa-key me-1"></i> Forgot your password?
+                                </a>
+                            </p>
+                            <p class="text-muted">
+                                Don't have an account? 
+                                <a href="{% url 'carelink:register' %}" class="text-decoration-none text-primary">
+                                    Create one now
+                                </a>
+                            </p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Features Section -->
+            <div class="row mt-5 text-center">
+                <div class="col-md-4">
+                    <div class="feature-box">
+                        <i class="fas fa-shield-alt fa-3x text-primary mb-3"></i>
+                        <h5 class="fw-bold">Secure Access</h5>
+                        <p class="text-muted small">Your data is protected with industry-standard encryption.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-box">
+                        <i class="fas fa-sync fa-3x text-primary mb-3"></i>
+                        <h5 class="fw-bold">Real-time Updates</h5>
+                        <p class="text-muted small">Stay informed with instant notifications.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-box">
+                        <i class="fas fa-clock fa-3x text-primary mb-3"></i>
+                        <h5 class="fw-bold">24/7 Access</h5>
+                        <p class="text-muted small">Monitor care progress anytime, anywhere.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

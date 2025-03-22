@@ -1,0 +1,483 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CareLink - Professional Healthcare Management{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{% static 'imgs/logo.png' %}">
+    
+    <!-- CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f1c40f;
+            --danger-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            color: var(--dark-color);
+        }
+
+        /* Navbar Styling */
+        .navbar {
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--primary-color) !important;
+        }
+
+        .nav-link {
+            color: var(--secondary-color) !important;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--accent-color) !important;
+        }
+
+        .nav-link.active {
+            color: var(--accent-color) !important;
+            border-bottom: 2px solid var(--accent-color);
+        }
+
+        /* Card Styling */
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-header {
+            border-bottom: none;
+            background-color: white;
+            padding: 1.5rem;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        /* Button Styling */
+        .btn {
+            border-radius: 8px;
+            padding: 0.5rem 1.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+            border-color: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        /* Form Styling */
+        .form-control {
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            padding: 0.75rem 1rem;
+        }
+
+        .form-control:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        /* Table Styling */
+        .table {
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .table thead th {
+            background-color: var(--light-color);
+            border-bottom: none;
+            font-weight: 600;
+        }
+
+        /* Badge Styling */
+        .badge {
+            padding: 0.5em 1em;
+            font-weight: 500;
+            border-radius: 6px;
+        }
+
+        /* Alert Styling */
+        .alert {
+            border: none;
+            border-radius: 10px;
+            padding: 1rem 1.5rem;
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            background-color: white;
+            border-right: 1px solid #dee2e6;
+            height: 100vh;
+            position: fixed;
+            padding: 2rem 1rem;
+        }
+
+        .sidebar-link {
+            color: var(--secondary-color);
+            text-decoration: none;
+            padding: 0.75rem 1rem;
+            display: block;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-link:hover {
+            background-color: var(--light-color);
+            color: var(--accent-color);
+        }
+
+        .sidebar-link.active {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        /* Loading Animation */
+        .loading-spinner {
+            width: 3rem;
+            height: 3rem;
+            border: 4px solid var(--light-color);
+            border-top: 4px solid var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .footer {
+            background: #e9ecef; /* Light Gray Background */
+            padding: 50px 0;
+            font-size: 1rem;
+            border-top: 3px solid #007bff;
+        }
+        
+        .footer h5 {
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #343a40; /* Dark Gray Heading */
+        }
+        
+        .footer p {
+            font-size: 0.95rem;
+            color: #495057; /* Medium Gray for Readability */
+        }
+        
+        .footer ul {
+            padding: 0;
+            list-style: none;
+        }
+        
+        .footer ul li {
+            margin-bottom: 10px;
+        }
+        
+        .footer ul li a {
+            color: #007bff;
+            transition: color 0.3s ease-in-out;
+        }
+        
+        .footer ul li a:hover {
+            color: #0056b3;
+            text-decoration: underline;
+        }
+        
+        .footer .social-links a {
+            color: #007bff;
+            transition: transform 0.3s ease-in-out, color 0.3s ease-in-out;
+            font-size: 1.2rem;
+        }
+        
+        .footer .social-links a:hover {
+            color: #0056b3;
+            transform: translateY(-3px);
+        }
+        
+        .footer hr {
+            border-top: 1px solid #ced4da; /* Soft Border */
+            margin: 20px 0;
+        }
+        
+        .footer .text-muted {
+            font-size: 0.9rem;
+            color: #6c757d; /* Soft Gray for Text */
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .footer {
+                text-align: center;
+            }
+        
+            .footer .social-links {
+                margin-top: 15px;
+            }
+        
+            .footer .social-links a {
+                margin: 0 8px;
+            }
+        }
+        
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light sticky-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'carelink:home' %}">
+                <img src="https://img.freepik.com/free-vector/hospital-logo-design-vector-medical-cross_53876-136743.jpg?w=1380&t=st=1709827987~exp=1709828587~hmac=1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a" alt="CareLink Logo" height="40" class="me-2">
+                CareLink
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if user.is_authenticated %}
+                        {% if user.is_staff %}
+                           
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'carelink:care_request_list' %}">
+                                    <i class="fas fa-hand-holding-medical me-2"></i>Care Requests
+                                </a>
+                            </li>
+                        {% elif user.user_type == 'FAMILY' %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'carelink:family_dashboard' %}">
+                                    <i class="fas fa-home me-2"></i>Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'carelink:care_request_list' %}">
+                                    <i class="fas fa-hand-holding-medical me-2"></i>Care Requests
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'carelink:health_document_list' %}">
+                                    <i class="fas fa-file-medical me-2"></i>Health Records
+                                </a>
+                            </li>
+                        {% elif user.user_type == 'CAREGIVER' %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'carelink:caregiver_dashboard' %}">
+                                    <i class="fas fa-columns me-2"></i>Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'carelink:task_list' %}">
+                                    <i class="fas fa-tasks me-2"></i>Tasks
+                                </a>
+                            </li>
+                        {% endif %}
+                       
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'carelink:notifications_list' %}">
+                                <i class="fas fa-bell me-2"></i>Notifications
+                                <span class="badge bg-danger rounded-pill unread-notifications-count"></span>
+                            </a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                {% if user.profile_picture %}
+                                    <img src="{{ user.profile_picture.url }}" alt="Profile" class="rounded-circle me-1" style="width: 30px; height: 30px; object-fit: cover;">
+                                {% else %}
+                                    <i class="fas fa-user-circle me-1"></i>
+                                {% endif %}
+                                {{ user.get_full_name|default:user.username }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end animate__animated animate__fadeIn">
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'carelink:profile' %}">
+                                        <i class="fas fa-user-cog me-2"></i>Profile Settings
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form method="post" action="{% url 'carelink:logout' %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'login' %}">
+                                <i class="fas fa-sign-in-alt me-1"></i>Login
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'carelink:register' %}">
+                                <i class="fas fa-user-plus me-1"></i>Register
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+        <div class="container mt-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show animate__animated animate__fadeIn" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="py-4">
+        {% block content %}{% endblock %}
+    </main>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+    <footer class="footer mt-auto py-3 bg-light">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5 class="text-primary">CareLink</h5>
+                    <p class="text-muted">
+                        Connecting caregivers and families for better healthcare management.
+                    </p>
+                </div>
+                <div class="col-md-4">
+                    <h5 class="text-primary">Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{% url 'carelink:about' %}" class="text-decoration-none">About Us</a></li>
+                        <li><a href="{% url 'carelink:contact' %}" class="text-decoration-none">Contact</a></li>
+                        <li><a href="{% url 'carelink:privacy' %}" class="text-decoration-none">Privacy Policy</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5 class="text-primary">Connect With Us</h5>
+                    <div class="social-links">
+                        <a href="#" class="text-decoration-none me-3"><i class="fab fa-facebook fa-lg"></i></a>
+                        <a href="#" class="text-decoration-none me-3"><i class="fab fa-twitter fa-lg"></i></a>
+                        <a href="#" class="text-decoration-none me-3"><i class="fab fa-linkedin fa-lg"></i></a>
+                        <a href="#" class="text-decoration-none"><i class="fab fa-instagram fa-lg"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <div class="row">
+                <div class="col-12 text-center">
+                    <p class="text-muted mb-0">&copy; {% now "Y" %} CareLink. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize all date/time pickers
+            flatpickr(".datepicker", {
+                dateFormat: "Y-m-d",
+                allowInput: true
+            });
+
+            flatpickr(".timepicker", {
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: "H:i",
+                allowInput: true
+            });
+
+            // Initialize all tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
+            // Auto-hide alerts after 5 seconds
+            setTimeout(function() {
+                document.querySelectorAll('.alert').forEach(function(alert) {
+                    var bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

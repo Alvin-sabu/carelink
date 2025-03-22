@@ -1,0 +1,394 @@
+{% extends "carelink/base.html" %}
+{% load static %}
+
+{% block title %}Care Requests - CareLink{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">
+            <i class="fas fa-hand-holding-medical text-primary me-2"></i>Care Requests
+        </h2>
+        {% if user.user_type == 'FAMILY' %}
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newPatientCareRequestModal">
+                <i class="fas fa-user-plus me-2"></i>New Patient Care Request
+            </button>
+            <button type="button" class="btn btn-info text-white" data-bs-toggle="modal" data-bs-target="#newServiceRequestModal">
+                <i class="fas fa-calendar-plus me-2"></i>New Service Request
+            </button>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Pending Requests -->
+    <div class="card shadow-sm mb-4 animate__animated animate__fadeIn">
+        <div class="card-header bg-warning bg-gradient text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-clock me-2"></i>Pending Requests
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if pending_requests %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Patient</th>
+                            <th>Service Type</th>
+                            <th>Requested Date</th>
+                            <th>Preferred Time</th>
+                            <th>Status</th>
+                            {% if user.user_type == 'CAREGIVER' %}
+                            <th>Actions</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for request in pending_requests %}
+                        <tr>
+                            <td>{{ request.patient_name }} {{ request.patient_last_name }}</td>
+
+                            <td>{{ request.get_service_type_display }}</td>
+                            <td>{{ request.request_date }}</td>
+                            <td>{{ request.start_date }}</td>
+
+                            <td>
+                                <span class="badge bg-warning">Pending</span>
+                            </td>
+                            {% if user.user_type == 'CAREGIVER' %}
+                            <td>
+                                <div class="btn-group">
+                                    <button class="btn btn-success btn-sm approve-request" data-request-id="{{ request.id }}">
+                                        <i class="fas fa-check me-1"></i>Approve
+                                    </button>
+                                    <button class="btn btn-danger btn-sm reject-request" data-request-id="{{ request.id }}">
+                                        <i class="fas fa-times me-1"></i>Reject
+                                    </button>
+                                </div>
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">No pending care requests</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Approved Requests -->
+    <div class="card shadow-sm mb-4 animate__animated animate__fadeIn">
+        <div class="card-header bg-success bg-gradient text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-check-circle me-2"></i>Approved Requests
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if approved_requests %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Patient</th>
+                            <th>Service Type</th>
+                            <th>Requested Date</th>
+                            <th>Approved By</th>
+                            <th>Approval Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for request in approved_requests %}
+                        <tr>
+                            <td>{{ request.patient_name }} {{ request.patient_last_name }}</td>
+                            <td>{{ request.get_service_type_display }}</td>
+                            <td>{{ request.request_date }}</td>
+                            <td>{{ request.caregiver.get_full_name }}</td>
+                            <td>{{ request.start_date }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">No approved care requests</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Rejected Requests -->
+    <div class="card shadow-sm animate__animated animate__fadeIn">
+        <div class="card-header bg-danger bg-gradient text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-times-circle me-2"></i>Rejected Requests
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if rejected_requests %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Patient</th>
+                            <th>Service Type</th>
+                            <th>Requested Date</th>
+                            <th>Rejected By</th>
+                            <th>Rejection Date</th>
+                            <th>Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for request in rejected_requests %}
+                        <tr>
+                            <td>{{ request.patient.get_full_name }}</td>
+                            <td>{{ request.get_service_type_display }}</td>
+                            <td>{{ request.requested_date|date:"M d, Y" }}</td>
+                            <td>{{ request.caregiver.get_full_name }}</td>
+                            <td>{{ request.updated_at|date:"M d, Y" }}</td>
+                            <td>{{ request.rejection_reason }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">No rejected care requests</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- New Patient Care Request Modal -->
+{% if user.user_type == 'FAMILY' %}
+<div class="modal fade" id="newPatientCareRequestModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">New Patient Care Request</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'carelink:submit_care_request' %}" class="needs-validation" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="request_type" value="NEW_PATIENT">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Patient First Name</label>
+                            <input type="text" name="patient_name" class="form-control" required>
+                            <div class="invalid-feedback">Please enter patient's first name.</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Patient Last Name</label>
+                            <input type="text" name="patient_last_name" class="form-control" required>
+                            <div class="invalid-feedback">Please enter patient's last name.</div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Date of Birth</label>
+                            <input type="date" name="patient_date_of_birth" class="form-control" required>
+                            <div class="invalid-feedback">Please select date of birth.</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Service Type <span class="text-danger">*</span></label>
+                            <select name="service_type" class="form-select" required>
+                                <option value="">Select service type...</option>
+                                <option value="HOME_CARE">Home Care</option>
+                                <option value="MEDICAL_ASSISTANCE">Medical Assistance</option>
+                                <option value="RESPITE_CARE">Respite Care</option>
+                                <option value="SPECIALIZED_CARE">Specialized Care</option>
+                            </select>
+                            <div class="invalid-feedback">Please select a service type.</div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Medical Condition</label>
+                        <textarea name="patient_condition" class="form-control" rows="3" required></textarea>
+                        <div class="invalid-feedback">Please describe the medical condition.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Emergency Contact</label>
+                        <input type="tel" name="emergency_contact" class="form-control" required>
+                        <div class="invalid-feedback">Please provide an emergency contact number.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        <textarea name="patient_address" class="form-control" rows="2" required></textarea>
+                        <div class="invalid-feedback">Please provide the patient's address.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- New Service Request Modal -->
+<div class="modal fade" id="newServiceRequestModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">New Service Request</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'carelink:submit_care_request' %}" class="needs-validation" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="request_type" value="SERVICE">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Patient</label>
+                        <select name="patient_id" class="form-select" required>
+                            <option value="">Select patient...</option>
+                            {% for patient in patients %}
+                                <option value="{{ patient.id }}">{{ patient.get_full_name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="invalid-feedback">Please select a patient.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Service Type <span class="text-danger">*</span></label>
+                        <select name="service_type" class="form-select" required>
+                            <option value="">Select service type...</option>
+                            <option value="HOME_CARE">Home Care</option>
+                            <option value="MEDICAL_ASSISTANCE">Medical Assistance</option>
+                            <option value="RESPITE_CARE">Respite Care</option>
+                            <option value="SPECIALIZED_CARE">Specialized Care</option>
+                        </select>
+                        <div class="invalid-feedback">Please select a service type.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Requested Date</label>
+                        <input type="date" name="requested_date" class="form-control" required>
+                        <div class="invalid-feedback">Please select a date.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Preferred Time</label>
+                        <input type="time" name="preferred_time" class="form-control" required>
+                        <div class="invalid-feedback">Please select a time.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea name="notes" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent default submission first
+            
+            // Check form validity
+            if (!form.checkValidity()) {
+                event.stopPropagation();
+                form.classList.add('was-validated');
+                return;
+            }
+            
+            // Additional validation for service type
+            const serviceTypeSelect = form.querySelector('select[name="service_type"]');
+            if (serviceTypeSelect && !serviceTypeSelect.value) {
+                serviceTypeSelect.classList.add('is-invalid');
+                return;
+            }
+            
+            // If all validations pass, submit the form
+            form.classList.add('was-validated');
+            form.submit();
+        });
+        
+        // Real-time validation for service type
+        const serviceTypeSelect = form.querySelector('select[name="service_type"]');
+        if (serviceTypeSelect) {
+            serviceTypeSelect.addEventListener('change', function() {
+                if (this.value) {
+                    this.classList.remove('is-invalid');
+                    this.classList.add('is-valid');
+                } else {
+                    this.classList.remove('is-valid');
+                    this.classList.add('is-invalid');
+                }
+            });
+        }
+    });
+
+    // Handle request approval
+    document.querySelectorAll('.approve-request').forEach(button => {
+        button.addEventListener('click', function() {
+            const requestId = this.dataset.requestId;
+            if (confirm('Are you sure you want to approve this care request?')) {
+                fetch(`/carelink/approve-care-request/${requestId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    },
+                    body: JSON.stringify({ status: 'APPROVED' })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        alert('Error approving request. Please try again.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error approving request. Please try again.');
+                });
+            }
+        });
+    });
+
+    // Handle request rejection
+    document.querySelectorAll('.reject-request').forEach(button => {
+        button.addEventListener('click', function() {
+            const requestId = this.dataset.requestId;
+            const reason = prompt('Please provide a reason for rejection:');
+            if (reason) {
+                fetch(`/carelink/approve-care-request/${requestId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    },
+                    body: JSON.stringify({
+                        status: 'REJECTED',
+                        rejection_reason: reason
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        alert('Error rejecting request. Please try again.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error rejecting request. Please try again.');
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

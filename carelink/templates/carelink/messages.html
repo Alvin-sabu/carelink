@@ -1,0 +1,51 @@
+{% extends 'carelink/base.html' %}
+
+{% block title %}Messages - CareLink{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <div class="row">
+        <div class="col-12 mb-4">
+            <h2>Messages</h2>
+            <p class="text-muted">Your conversations with patients' caregivers and family members</p>
+        </div>
+        
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for conversation in conversations %}
+                        <a href="{% url 'carelink:conversation' user_id=conversation.other_user.id patient_id=conversation.patient.id %}" 
+                           class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ conversation.other_user.get_full_name }}</h6>
+                                    <p class="mb-1 text-muted">
+                                        Re: {{ conversation.patient.get_full_name }}
+                                    </p>
+                                    <p class="mb-1">{{ conversation.latest_message.message|truncatechars:100 }}</p>
+                                </div>
+                                <div class="text-end">
+                                    <small class="text-muted d-block">
+                                        {{ conversation.latest_message.timestamp|date:"M d, Y H:i" }}
+                                    </small>
+                                    {% if conversation.unread_count > 0 %}
+                                    <span class="badge bg-primary rounded-pill">
+                                        {{ conversation.unread_count }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </a>
+                        {% empty %}
+                        <div class="list-group-item text-center py-4">
+                            <p class="text-muted mb-0">No conversations yet.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

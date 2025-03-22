@@ -1,0 +1,212 @@
+{% extends 'carelink/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Register - CareLink{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card animate__animated animate__fadeIn shadow-lg">
+                <div class="card-header bg-primary text-white text-center">
+                    <h3 class="card-title mb-0">Create Your CareLink Account</h3>
+                    <p class="mb-0">Join our healthcare management platform</p>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="registration-form" novalidate>
+                        {% csrf_token %}
+
+                        <!-- Account Type Section -->
+                        <div class="mb-4">
+                            <h5 class="mb-3"><i class="fas fa-user-tag me-2"></i>Account Type</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card h-100 account-type-card" data-type="CAREGIVER">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-user-nurse fa-3x mb-3"></i>
+                                            <h5>Caregiver</h5>
+                                            <p class="text-muted small">Healthcare professionals providing care</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card h-100 account-type-card" data-type="FAMILY">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-users fa-3x mb-3"></i>
+                                            <h5>Family Member</h5>
+                                            <p class="text-muted small">Family members monitoring care</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {{ form.user_type|as_crispy_field }}
+                        </div>
+
+                        <!-- Personal Information -->
+                        <div class="mb-4">
+                            <h5><i class="fas fa-user me-2"></i>Personal Information</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.first_name|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.last_name|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contact Information -->
+                        <div class="mb-4">
+                            <h5><i class="fas fa-address-card me-2"></i>Contact Information</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.email|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.phone_number|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Profile Picture -->
+                        <div class="mb-4">
+                            <h5><i class="fas fa-camera me-2"></i>Profile Picture</h5>
+                            <div class="profile-container text-center">
+                                <label for="id_profile_picture" class="profile-label">
+                                    <div class="profile-preview">
+                                        <i class="fas fa-user fa-3x text-muted"></i>
+                                    </div>
+                                </label>
+                                {{ form.profile_picture|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <!-- Account Credentials -->
+                        <div class="mb-4">
+                            <h5><i class="fas fa-lock me-2"></i>Account Credentials</h5>
+                            {{ form.username|as_crispy_field }}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.password1|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.password2|as_crispy_field }}
+                                </div>
+                            </div>
+                            <div class="password-strength d-none">
+                                <p class="mb-2">Password Strength: <span class="strength-text"></span></p>
+                                <div class="progress">
+                                    <div class="progress-bar"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-user-plus me-2"></i>Create Account
+                            </button>
+                            <p class="text-center text-muted mt-3">
+                                Already have an account? <a href="{% url 'login' %}" class="text-decoration-none">Login here</a>
+                            </p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Card Styling */
+.card {
+    border-radius: 10px;
+    overflow: hidden;
+}
+.card-header {
+    font-weight: bold;
+}
+.shadow-lg {
+    box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Account Type Selection */
+.account-type-card {
+    cursor: pointer;
+    transition: 0.3s ease-in-out;
+    border: 2px solid transparent;
+}
+.account-type-card:hover,
+.account-type-card.selected {
+    border-color: #007bff;
+    background: rgba(0, 123, 255, 0.1);
+}
+
+/* Profile Picture Preview */
+.profile-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.profile-label {
+    cursor: pointer;
+}
+.profile-preview {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+/* Password Strength */
+.password-strength {
+    margin-top: 10px;
+}
+.progress {
+    height: 5px;
+}
+.progress-bar {
+    width: 0%;
+    transition: width 0.3s ease-in-out;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Account Type Selection
+    document.querySelectorAll('.account-type-card').forEach(card => {
+        card.addEventListener('click', function() {
+            document.querySelectorAll('.account-type-card').forEach(c => c.classList.remove('selected'));
+            this.classList.add('selected');
+            document.querySelector('#id_user_type').value = this.dataset.type;
+        });
+    });
+
+    // Profile Picture Preview
+    document.querySelector('#id_profile_picture').addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                document.querySelector('.profile-preview').innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">`;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Password Strength Indicator
+    const passwordInput = document.querySelector('#id_password1');
+    passwordInput.addEventListener('input', function() {
+        let strength = this.value.length;
+        document.querySelector('.progress-bar').style.width = `${strength * 10}%`;
+    });
+});
+</script>
+{% endblock %}

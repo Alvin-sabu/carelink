@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Welcome to CareLink</title>
+    <style>
+        /* Base */
+        body {
+            background-color: #f6f6f6;
+            font-family: sans-serif;
+            -webkit-font-smoothing: antialiased;
+            font-size: 14px;
+            line-height: 1.4;
+            margin: 0;
+            padding: 0;
+            -ms-text-size-adjust: 100%;
+            -webkit-text-size-adjust: 100%;
+        }
+        .container {
+            background: #ffffff;
+            border-radius: 10px;
+            max-width: 580px;
+            margin: 20px auto;
+            padding: 20px;
+            text-align: center;
+        }
+        .header {
+            background: #007bff;
+            color: white;
+            padding: 20px;
+            border-radius: 5px 5px 0 0;
+            margin: -20px -20px 20px -20px;
+        }
+        .content {
+            margin: 20px 0;
+            text-align: left;
+            padding: 0 20px;
+        }
+        .button {
+            background: #007bff;
+            border-radius: 5px;
+            color: white;
+            display: inline-block;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 12px 25px;
+            text-decoration: none;
+        }
+        .footer {
+            color: #666666;
+            font-size: 12px;
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Welcome to CareLink!</h1>
+        </div>
+        <div class="content">
+            <p>Dear {{ user.first_name }},</p>
+            
+            <p>Thank you for registering with CareLink! We're excited to have you join our healthcare management platform.</p>
+            
+            <p>Your account has been successfully created with the following details:</p>
+            <ul>
+                <li>Username: {{ user.username }}</li>
+                <li>Email: {{ user.email }}</li>
+                <li>Account Type: {{ user.get_user_type_display }}</li>
+            </ul>
+
+            <p>To get started with CareLink, please click the button below to verify your email address:</p>
+            
+            <div style="text-align: center;">
+                <a href="{{ verification_url }}" class="button">Verify Email Address</a>
+            </div>
+
+            <p>If the button above doesn't work, you can copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; font-family: monospace; background: #f8f9fa; padding: 10px; border-radius: 5px;">
+                {{ verification_url }}
+            </p>
+
+            <p>For security reasons, this verification link will expire in 24 hours.</p>
+        </div>
+        <div class="footer">
+            <p>This is an automated message from CareLink. Please do not reply to this email.</p>
+            <p>&copy; {% now "Y" %} CareLink. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html> 

@@ -1,0 +1,163 @@
+{% extends 'carelink/base.html' %}
+{% load static %}
+
+{% block title %}Privacy Policy - CareLink{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <h1 class="text-primary mb-4">Privacy Policy</h1>
+            <p class="text-muted mb-4">Last updated: {{ last_updated }}</p>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h2 class="h4 text-primary">Introduction</h2>
+                    <p>
+                        CareLink ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, 
+                        disclose, and safeguard your information when you use our healthcare management platform.
+                    </p>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h2 class="h4 text-primary">Information We Collect</h2>
+                    <h3 class="h5 mt-3">Personal Information</h3>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Name, email address, and contact information
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Date of birth and demographic information
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Healthcare provider information
+                        </li>
+                    </ul>
+
+                    <h3 class="h5 mt-4">Health Information</h3>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Medical history and conditions
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Vital signs and health metrics
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Medication information
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h2 class="h4 text-primary">How We Use Your Information</h2>
+                    <p>We use the collected information for the following purposes:</p>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-shield-alt text-primary me-2"></i>
+                            Provide and maintain our healthcare management services
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-shield-alt text-primary me-2"></i>
+                            Coordinate care between caregivers and family members
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-shield-alt text-primary me-2"></i>
+                            Monitor and analyze health trends
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-shield-alt text-primary me-2"></i>
+                            Improve our services and user experience
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h2 class="h4 text-primary">Data Security</h2>
+                    <p>
+                        We implement appropriate technical and organizational security measures to protect your information. 
+                        These measures include:
+                    </p>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-lock text-warning me-2"></i>
+                            Encryption of data in transit and at rest
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-lock text-warning me-2"></i>
+                            Regular security assessments and updates
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-lock text-warning me-2"></i>
+                            Access controls and authentication measures
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-lock text-warning me-2"></i>
+                            HIPAA compliance and regular audits
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h2 class="h4 text-primary">Your Rights</h2>
+                    <p>You have the right to:</p>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-user-shield text-info me-2"></i>
+                            Access your personal information
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-user-shield text-info me-2"></i>
+                            Request corrections to your information
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-user-shield text-info me-2"></i>
+                            Request deletion of your information
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-user-shield text-info me-2"></i>
+                            Opt-out of certain data processing
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h2 class="h4 text-primary">Contact Us</h2>
+                    <p>
+                        If you have any questions about this Privacy Policy, please contact us at:
+                    </p>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-envelope text-primary me-2"></i>
+                            Email: privacy@carelink.com
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-phone text-primary me-2"></i>
+                            Phone: +1 (234) 567-890
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-map-marker-alt text-primary me-2"></i>
+                            Address: 123 Healthcare Avenue, Medical District, New York, NY 10001
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

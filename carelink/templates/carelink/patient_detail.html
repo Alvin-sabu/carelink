@@ -1,0 +1,427 @@
+<!-- templates/carelink/patient_detail.html -->
+{% extends 'carelink/base.html' %}
+
+{% block title %}{{ patient.first_name }} {{ patient.last_name }} - Details{% endblock %}
+{% load crispy_forms_tags %}
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Patient Information Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-1 text-primary">{{ patient.first_name }} {{ patient.last_name }}</h2>
+                            <p class="text-muted mb-0">
+                                <i class="fas fa-calendar-alt me-2"></i>Age: {{ patient.date_of_birth|timesince }} old
+                            </p>
+                        </div>
+                        {% if user.user_type == 'CAREGIVER' and user == patient.assigned_caregiver %}
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addHealthLogModal">
+                            <i class="fas fa-plus-circle me-2"></i>Add Health Log
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Health Logs Section -->
+        <div class="col-md-7">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0 text-primary">
+                        <i class="fas fa-heartbeat me-2"></i>Health Logs
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for log in health_logs %}
+                    <div class="card mb-3 border-0 shadow-sm health-log-card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="fas fa-thermometer-half text-danger me-2"></i>
+                                        <p class="mb-0"><strong>Temperature:</strong> {{ log.temperature }}°C</p>
+                                    </div>
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="fas fa-heart text-primary me-2"></i>
+                                        <p class="mb-0"><strong>Blood Pressure:</strong> {{ log.blood_pressure }}</p>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-wave-square text-success me-2"></i>
+                                        <p class="mb-0"><strong>Pulse Rate:</strong> {{ log.pulse_rate }} bpm</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-8">
+                                    <p class="mb-1"><strong>Notes:</strong></p>
+                                    <p class="text-muted">{{ log.notes|default:"No notes provided" }}</p>
+                                    <small class="text-muted">
+                                        <i class="fas fa-user me-1"></i>{{ log.caregiver.get_full_name }} - 
+                                        <i class="fas fa-clock me-1"></i>{{ log.timestamp|timesince }} ago
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-notes-medical text-muted fa-3x mb-3"></i>
+                        <p class="text-muted">No health logs recorded yet.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Medications Section -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 text-primary">
+                        <i class="fas fa-pills me-2"></i>Current Medications
+                    </h5>
+                    {% if user.user_type == 'CAREGIVER' and user == patient.assigned_caregiver %}
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addMedicationModal">
+                        <i class="fas fa-plus-circle me-1"></i>Add Medication
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% for medication in medications %}
+                    <div class="card mb-3 border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1 text-primary">{{ medication.name }}</h6>
+                                    <p class="mb-1">
+                                        <i class="fas fa-prescription me-1"></i>
+                                        <strong>Dosage:</strong> {{ medication.dosage }}
+                                    </p>
+                                    <p class="mb-1">
+                                        <i class="fas fa-clock me-1"></i>
+                                        <strong>Frequency:</strong> {{ medication.get_frequency_display }}
+                                    </p>
+                                    <p class="mb-0">
+                                        <i class="fas fa-calendar-check me-1"></i>
+                                        <small class="text-muted">Start Date: {{ medication.start_date }}</small>
+                                    </p>
+                                </div>
+                                {% if medication.instructions %}
+                                <span class="badge bg-info" data-bs-toggle="tooltip" title="{{ medication.instructions }}">
+                                    <i class="fas fa-info-circle"></i>
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-prescription-bottle text-muted fa-3x mb-3"></i>
+                        <p class="text-muted">No medications recorded.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Patient Stats Section -->
+        <div class="col-md-5">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0 text-primary">
+                        <i class="fas fa-chart-line me-2"></i>Patient Statistics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Latest Vitals -->
+                    {% with latest_log=health_logs.first %}
+                    {% if latest_log %}
+                    <h6 class="text-muted mb-3">Latest Vital Signs</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-6">
+                            <div class="p-3 bg-light rounded">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-thermometer-half text-danger fa-2x me-3"></i>
+                                    <div>
+                                        <small class="text-muted d-block">Temperature</small>
+                                        <span class="h5 mb-0">{{ latest_log.temperature }}°C</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 bg-light rounded">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-heart text-primary fa-2x me-3"></i>
+                                    <div>
+                                        <small class="text-muted d-block">Blood Pressure</small>
+                                        <span class="h5 mb-0">{{ latest_log.blood_pressure }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 bg-light rounded">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-wave-square text-success fa-2x me-3"></i>
+                                    <div>
+                                        <small class="text-muted d-block">Pulse Rate</small>
+                                        <span class="h5 mb-0">{{ latest_log.pulse_rate }} bpm</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 bg-light rounded">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-clock text-warning fa-2x me-3"></i>
+                                    <div>
+                                        <small class="text-muted d-block">Last Check</small>
+                                        <span class="h5 mb-0">{{ latest_log.timestamp|timesince }} ago</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-chart-bar text-muted fa-3x mb-3"></i>
+                        <p class="text-muted">No vital signs recorded yet.</p>
+                    </div>
+                    {% endif %}
+                    {% endwith %}
+
+                    <!-- Medication Summary -->
+                    <h6 class="text-muted mb-3">Medication Summary</h6>
+                    <div class="p-3 bg-light rounded mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted d-block">Active Medications</small>
+                                <span class="h5 mb-0">{{ medications.count }}</span>
+                            </div>
+                            <i class="fas fa-pills text-primary fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Health Log Modal -->
+<div class="modal fade" id="addHealthLogModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus-circle me-2"></i>Add Health Log
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="healthLogForm" method="post" action="{% url 'carelink:add_health_log' patient.pk %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    {{ health_log_form|crispy }}
+                    
+                    <!-- Validation Messages -->
+                    <div id="validationErrors" class="alert alert-danger d-none"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Add Health Log
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Medication Modal -->
+<div class="modal fade" id="addMedicationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-pills me-2"></i>Add Medication
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'carelink:add_medication' patient.pk %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    {{ medication_form|crispy }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Add Medication
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+$(document).ready(function() {
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+
+    // Setup CSRF token for AJAX requests
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    // Medication form submission handler
+    const medicationForm = $('#addMedicationModal form');
+    medicationForm.on('submit', function(e) {
+        e.preventDefault();
+        const form = $(this);
+        const submitBtn = form.find('button[type="submit"]');
+        submitBtn.prop('disabled', true);
+
+        // Remove any existing alerts
+        form.find('.alert').remove();
+
+        $.ajax({
+            url: form.attr('action'),
+            method: 'POST',
+            data: form.serialize(),
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Create success alert
+                    const alert = $('<div class="alert alert-success alert-dismissible fade show" role="alert">')
+                        .text('Medication added successfully!')
+                        .append('<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>');
+                    
+                    // Insert alert at the top of the medications section
+                    $('.card-header:contains("Current Medications")').after(alert);
+                    
+                    // Close modal and reset form
+                    $('#addMedicationModal').modal('hide');
+                    form[0].reset();
+                    
+                    // Reload the page after a short delay
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    // Create error alert
+                    const alert = $('<div class="alert alert-danger alert-dismissible fade show" role="alert">')
+                        .text(response.error || 'Error adding medication. Please try again.')
+                        .append('<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>');
+                    
+                    form.find('.modal-body').prepend(alert);
+                }
+            },
+            error: function(xhr) {
+                let errorMessage = 'Error adding medication. Please try again.';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage = xhr.responseJSON.error;
+                }
+                
+                const alert = $('<div class="alert alert-danger alert-dismissible fade show" role="alert">')
+                    .text(errorMessage)
+                    .append('<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>');
+                
+                form.find('.modal-body').prepend(alert);
+            },
+            complete: function() {
+                submitBtn.prop('disabled', false);
+            }
+        });
+    });
+
+    // Health Log Form Validation
+    const healthLogForm = $('#healthLogForm');
+    const validationErrors = $('#validationErrors');
+
+    function showError(message) {
+        validationErrors.removeClass('d-none').html(message);
+    }
+
+    function hideError() {
+        validationErrors.addClass('d-none').html('');
+    }
+
+    function validateHealthLogForm() {
+        const temperature = parseFloat($('#id_temperature').val());
+        const bloodPressure = $('#id_blood_pressure').val();
+        const pulseRate = parseInt($('#id_pulse_rate').val());
+        let errors = [];
+
+        // Temperature validation (35.0°C - 42.0°C)
+        if (isNaN(temperature) || temperature < 35.0 || temperature > 42.0) {
+            errors.push("Temperature must be between 35.0°C and 42.0°C");
+        }
+
+        // Blood pressure validation (format: systolic/diastolic)
+        if (bloodPressure) {
+            const bpParts = bloodPressure.split('/');
+            if (bpParts.length !== 2) {
+                errors.push("Blood pressure must be in format: systolic/diastolic (e.g., 120/80)");
+            } else {
+                const systolic = parseInt(bpParts[0]);
+                const diastolic = parseInt(bpParts[1]);
+                
+                if (isNaN(systolic) || systolic < 70 || systolic > 200) {
+                    errors.push("Systolic pressure must be between 70-200 mmHg");
+                }
+                if (isNaN(diastolic) || diastolic < 40 || diastolic > 130) {
+                    errors.push("Diastolic pressure must be between 40-130 mmHg");
+                }
+                if (systolic <= diastolic) {
+                    errors.push("Systolic pressure must be greater than diastolic pressure");
+                }
+            }
+        }
+
+        // Pulse rate validation (40-200 BPM)
+        if (isNaN(pulseRate) || pulseRate < 40 || pulseRate > 200) {
+            errors.push("Pulse rate must be between 40-200 BPM");
+        }
+
+        if (errors.length > 0) {
+            showError(errors.join("<br>"));
+            return false;
+        }
+        
+        hideError();
+        return true;
+    }
+
+    // Add input event listeners for real-time validation
+    $('#id_temperature, #id_blood_pressure, #id_pulse_rate').on('input', validateHealthLogForm);
+
+    // Health log form submission handler
+    healthLogForm.on('submit', function(e) {
+        if (!validateHealthLogForm()) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

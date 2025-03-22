@@ -1,0 +1,85 @@
+{% extends 'carelink/base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">Medications Management</h1>
+        <a href="{% url 'carelink:medication_create' %}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            Add New Medication
+        </a>
+    </div>
+
+    <!-- Alerts Section -->
+    <div class="mb-8">
+        <h2 class="text-xl font-semibold mb-4">Alerts</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {% if needs_refill %}
+            <div class="bg-yellow-100 border-l-4 border-yellow-500 p-4">
+                <h3 class="font-bold text-yellow-700">Medications Needing Refill</h3>
+                <ul class="mt-2">
+                    {% for med in needs_refill %}
+                    <li class="text-yellow-600">
+                        {{ med.name }} - {{ med.refills_remaining }} refills remaining
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if upcoming_doses %}
+            <div class="bg-blue-100 border-l-4 border-blue-500 p-4">
+                <h3 class="font-bold text-blue-700">Upcoming Doses</h3>
+                <ul class="mt-2">
+                    {% for schedule in upcoming_doses %}
+                    <li class="text-blue-600">
+                        {{ schedule.medication.name }} - {{ schedule.scheduled_time|time:"g:i A" }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Active Medications -->
+    <div class="bg-white shadow-md rounded-lg overflow-hidden">
+        <table class="min-w-full">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Medication</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dosage</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Frequency</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for medication in medications %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <a href="{% url 'carelink:medication_detail' medication.id %}" class="text-blue-600 hover:text-blue-900">
+                            {{ medication.name }}
+                        </a>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {{ medication.patient.first_name }} {{ medication.patient.last_name }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">{{ medication.dosage }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">{{ medication.get_frequency_display }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <a href="{% url 'carelink:medication_detail' medication.id %}" class="text-blue-600 hover:text-blue-900 mr-4">View</a>
+                        <a href="{% url 'carelink:medication_edit' medication.id %}" class="text-green-600 hover:text-green-900">Edit</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                        No medications found
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

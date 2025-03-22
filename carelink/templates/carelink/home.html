@@ -1,0 +1,681 @@
+{% extends 'carelink/base.html' %}
+{% load static %}
+
+{% block title %}CareLink - Professional Healthcare Management Platform{% endblock %}
+
+{% block content %}
+
+<style>
+    /* General Styling */
+    body {
+        font-family: 'Arial', sans-serif;
+    }
+
+    /* Hero Section */
+    .hero {
+        background: linear-gradient(to right, #f8f9fa, #ffffff);
+        padding: 60px 0;
+    }
+    .hero h1 {
+        color: #007bff;
+    }
+
+    /* Features Section */
+    .features {
+        background-color: #f8f9fa;
+        padding: 60px 0;
+    }
+    .feature-card {
+        border: none;
+        padding: 20px;
+        transition: 0.3s;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.15);
+    }
+    .feature-icon {
+        font-size: 2rem;
+        color: #007bff;
+        margin-bottom: 15px;
+    }
+
+    /* Call to Action (CTA) Section */
+    .cta {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        text-align: center;
+        padding: 80px 20px;
+        border-radius: 8px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s ease-in-out;
+    }
+    
+    .cta:hover {
+        transform: scale(1.02);
+    }
+
+    .cta h2 {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 15px;
+    }
+
+    .cta p {
+        font-size: 1.3rem;
+        max-width: 700px;
+        margin: 0 auto 30px;
+        opacity: 0.9;
+    }
+
+    .cta .btn {
+        font-size: 1.2rem;
+        padding: 12px 30px;
+        border-radius: 50px;
+        transition: all 0.3s ease-in-out;
+        font-weight: 600;
+    }
+
+    .cta .btn-light {
+        color: #007bff;
+        background-color: white;
+        border: none;
+        box-shadow: 0 4px 10px rgba(255, 255, 255, 0.3);
+    }
+
+    .cta .btn-light:hover {
+        background-color: #f8f9fa;
+        transform: translateY(-3px);
+        box-shadow: 0 6px 15px rgba(255, 255, 255, 0.4);
+    }
+
+    @media (max-width: 768px) {
+        .cta h2 {
+            font-size: 2rem;
+        }
+        .cta p {
+            font-size: 1.1rem;
+        }
+        .cta .btn {
+            font-size: 1rem;
+            padding: 10px 25px;
+        }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .hero {
+            text-align: center;
+        }
+        .hero img {
+            margin-top: 20px;
+        }
+    }
+
+    /* How It Works Section */
+    .how-it-works {
+        padding: 80px 20px;
+        background-color: #f8f9fa;
+    }
+
+    .how-it-works h2 {
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+
+    .how-it-works .steps {
+        max-width: 500px;
+        margin: auto;
+    }
+
+    .how-it-works .step {
+        display: flex;
+        align-items: center;
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    }
+
+    .how-it-works .step:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    .how-it-works .step-number {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        font-weight: bold;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        flex-shrink: 0;
+        box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+    }
+
+    .how-it-works h3 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .how-it-works p {
+        font-size: 1rem;
+        color: #6c757d;
+        margin: 0;
+    }
+
+    .how-it-works img {
+        border-radius: 12px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    @media (max-width: 768px) {
+        .how-it-works h2 {
+            font-size: 2rem;
+        }
+
+        .how-it-works .step {
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 15px;
+        }
+
+        .how-it-works .step-number {
+            margin-bottom: 10px;
+        }
+
+        .how-it-works h3 {
+            font-size: 1.1rem;
+        }
+
+        .how-it-works p {
+            font-size: 0.95rem;
+        }
+    }
+
+    /* Testimonials Section */
+    .testimonials {
+        background-color: #f8f9fa;
+        padding: 80px 20px;
+    }
+
+    .testimonials h2 {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #007bff;
+    }
+
+    .testimonials .card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    }
+
+    .testimonials .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .testimonials .card-body {
+        padding: 25px;
+    }
+
+    .testimonials .d-flex {
+        align-items: center;
+    }
+
+    .testimonials img {
+        width: 65px;
+        height: 65px;
+        border-radius: 50%;
+        border: 3px solid #007bff;
+        box-shadow: 0 4px 10px rgba(0, 123, 255, 0.2);
+    }
+
+    .testimonials h3 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    .testimonials p.text-muted {
+        font-size: 0.95rem;
+        color: #6c757d;
+        margin-bottom: 10px;
+    }
+
+    .testimonials p.mb-0 {
+        font-size: 1rem;
+        color: #333;
+        line-height: 1.5;
+    }
+
+    @media (max-width: 768px) {
+        .testimonials h2 {
+            font-size: 2rem;
+        }
+
+        .testimonials img {
+            width: 55px;
+            height: 55px;
+        }
+
+        .testimonials h3 {
+            font-size: 1.1rem;
+        }
+
+        .testimonials p {
+            font-size: 0.95rem;
+        }
+    }
+
+    /* CTA Section */
+    .cta {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        padding: 80px 20px;
+        text-align: center;
+        border-radius: 8px;
+    }
+
+    .cta h2 {
+        font-size: 2.5rem;
+        font-weight: bold;
+        line-height: 1.3;
+    }
+
+    .cta p.lead {
+        font-size: 1.2rem;
+        opacity: 0.9;
+    }
+
+    .cta .btn-lg {
+        font-size: 1.2rem;
+        font-weight: 600;
+        padding: 12px 24px;
+        border-radius: 50px;
+        transition: all 0.3s ease-in-out;
+    }
+
+    .cta .btn-light {
+        background: #ffffff;
+        color: #007bff;
+        border: 2px solid #ffffff;
+    }
+
+    .cta .btn-light:hover {
+        background: #f8f9fa;
+        color: #0056b3;
+        border: 2px solid #f8f9fa;
+        transform: scale(1.05);
+    }
+
+    /* Animation delay for better effect */
+    .cta .animate__fadeInLeft {
+        animation-delay: 0.2s;
+    }
+
+    .cta .animate__fadeInRight {
+        animation-delay: 0.4s;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .cta {
+            padding: 60px 20px;
+        }
+
+        .cta h2 {
+            font-size: 2rem;
+        }
+
+        .cta p.lead {
+            font-size: 1rem;
+        }
+
+        .cta .btn-lg {
+            font-size: 1rem;
+            padding: 10px 20px;
+        }
+    }
+
+    /* Stats Section */
+    .stats {
+        background: #f8f9fa;
+        padding: 80px 20px;
+    }
+
+    .stat-item {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    }
+
+    .stat-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    .stat-item h3 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #007bff;
+        margin-bottom: 10px;
+    }
+
+    .stat-item p {
+        font-size: 1.2rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+
+    /* Animation delay for better effects */
+    .stats .animate__fadeInUp {
+        animation-duration: 1s;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .stats {
+            padding: 60px 20px;
+        }
+
+        .stat-item {
+            padding: 20px;
+        }
+
+        .stat-item h3 {
+            font-size: 2rem;
+        }
+
+        .stat-item p {
+            font-size: 1rem;
+        }
+    }
+</style>
+<!-- Hero Section -->
+<section class="hero py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 animate__animated animate__fadeInLeft">
+                <h1 class="display-4 fw-bold text-primary">Connecting Care with Compassion</h1>
+                <p class="lead">
+                    CareLink brings together caregivers and families on a secure platform, 
+                    ensuring seamless healthcare management and peace of mind for your loved ones.
+                </p>
+                <div class="d-flex gap-3">
+                    {% if not user.is_authenticated %}
+                        <a href="{% url 'carelink:register' %}" class="btn btn-primary btn-lg">Get Started <i class="fas fa-arrow-right ms-2"></i></a>
+                        <a href="{% url 'login' %}" class="btn btn-outline-primary btn-lg">Sign In <i class="fas fa-sign-in-alt ms-2"></i></a>
+                    {% else %}
+                        <a href="{% url 'carelink:dashboard' %}" class="btn btn-primary btn-lg">Go to Dashboard <i class="fas fa-columns ms-2"></i></a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-6 animate__animated animate__fadeInRight">
+                <img src="https://img.freepik.com/free-photo/medical-banner-with-doctor-working-laptop_23-2149611193.jpg?w=1380&t=st=1709827772~exp=1709828372~hmac=e1197d3d1856f83367ad37731e6fce7d6ad0a1cd7a7c8f5f1d4f1b46d8d7d8d8" alt="Healthcare Management" class="img-fluid rounded shadow">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features py-5">
+    <div class="container">
+        <h2 class="text-center text-primary">Why Choose CareLink?</h2>
+        <div class="row g-4 mt-4">
+            <div class="col-md-4 animate__animated animate__fadeInUp">
+                <div class="card feature-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-heartbeat feature-icon"></i>
+                        <h3 class="h4">Real-time Monitoring</h3>
+                        <p>Track vital signs, medications, and health metrics in real-time.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
+                <div class="card feature-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-comments feature-icon"></i>
+                        <h3 class="h4">Seamless Communication</h3>
+                        <p>Stay connected with caregivers and family members securely.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 animate__animated animate__fadeInUp" style="animation-delay: 0.4s;">
+                <div class="card feature-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-shield-alt feature-icon"></i>
+                        <h3 class="h4">HIPAA Compliant</h3>
+                        <p>Data security with industry-leading measures and full compliance.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="cta py-5 text-white">
+    <div class="container text-center">
+        <h2>Ready to Transform Healthcare Management?</h2>
+        <p class="lead">Join thousands of families and caregivers who trust CareLink.</p>
+        {% if not user.is_authenticated %}
+            <a href="{% url 'carelink:register' %}" class="btn btn-light btn-lg">Get Started <i class="fas fa-arrow-right ms-2"></i></a>
+        {% else %}
+            <a href="{% url 'carelink:dashboard' %}" class="btn btn-light btn-lg">Go to Dashboard <i class="fas fa-columns ms-2"></i></a>
+        {% endif %}
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="how-it-works py-5 bg-light">
+    <div class="container">
+        <h2 class="text-center text-primary mb-5">How CareLink Works</h2>
+        <div class="row g-4 align-items-center">
+            <div class="col-md-6 animate__animated animate__fadeInLeft">
+                <img src="https://img.freepik.com/free-vector/medical-healthcare-protection-illustration_1302-21355.jpg?w=1380&t=st=1709827819~exp=1709828419~hmac=e6d1f9c2f3d8f0f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8" alt="How CareLink Works" class="img-fluid rounded-3 shadow">
+            </div>
+            <div class="col-md-6 animate__animated animate__fadeInRight">
+                <div class="steps">
+                    <div class="step d-flex align-items-start mb-4">
+                        <div class="step-number bg-primary text-white rounded-circle p-3 me-3" style="width: 48px; height: 48px;">
+                            <span class="fw-bold">1</span>
+                        </div>
+                        <div>
+                            <h3 class="h5 mb-2">Create Your Account</h3>
+                            <p class="text-muted">Register as a family member or caregiver and set up your profile.</p>
+                        </div>
+                    </div>
+                    <div class="step d-flex align-items-start mb-4">
+                        <div class="step-number bg-primary text-white rounded-circle p-3 me-3" style="width: 48px; height: 48px;">
+                            <span class="fw-bold">2</span>
+                        </div>
+                        <div>
+                            <h3 class="h5 mb-2">Connect with Care Team</h3>
+                            <p class="text-muted">Link with healthcare providers and family members in a secure environment.</p>
+                        </div>
+                    </div>
+                    <div class="step d-flex align-items-start">
+                        <div class="step-number bg-primary text-white rounded-circle p-3 me-3" style="width: 48px; height: 48px;">
+                            <span class="fw-bold">3</span>
+                        </div>
+                        <div>
+                            <h3 class="h5 mb-2">Start Managing Care</h3>
+                            <p class="text-muted">Begin tracking health metrics, managing medications, and coordinating care.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="testimonials py-5">
+    <div class="container">
+        <h2 class="text-center text-primary mb-5">What Our Users Say</h2>
+        <div class="row g-4">
+            <div class="col-md-4 animate__animated animate__fadeInUp">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="flex-shrink-0">
+                                <img src="https://img.freepik.com/free-photo/portrait-smiling-young-woman_171337-11986.jpg?w=740&t=st=1709827859~exp=1709828459~hmac=7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f" alt="Sarah Johnson" class="rounded-circle" width="60" height="60">
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h3 class="h5 mb-1">Sarah Johnson</h3>
+                                <p class="text-muted mb-0">Family Member</p>
+                            </div>
+                        </div>
+                        <p class="mb-0">
+                            "CareLink has made it so much easier to stay connected with my mother's caregivers. 
+                            The real-time updates give me peace of mind knowing she's well taken care of."
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="flex-shrink-0">
+                                <img src="https://img.freepik.com/free-photo/doctor-with-his-arms-crossed-white-background_1368-5790.jpg?w=740&t=st=1709827893~exp=1709828493~hmac=9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f" alt="Dr. Michael Chen" class="rounded-circle" width="60" height="60">
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h3 class="h5 mb-1">Dr. Michael Chen</h3>
+                                <p class="text-muted mb-0">Healthcare Provider</p>
+                            </div>
+                        </div>
+                        <p class="mb-0">
+                            "The platform streamlines communication and care coordination. It's an essential tool 
+                            for modern healthcare delivery."
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 animate__animated animate__fadeInUp" style="animation-delay: 0.4s;">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="flex-shrink-0">
+                                <img src="https://img.freepik.com/free-photo/woman-doctor-wearing-lab-coat-with-stethoscope-isolated_1303-29791.jpg?w=740&t=st=1709827927~exp=1709828527~hmac=3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c" alt="Lisa Martinez" class="rounded-circle" width="60" height="60">
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h3 class="h5 mb-1">Lisa Martinez</h3>
+                                <p class="text-muted mb-0">Caregiver</p>
+                            </div>
+                        </div>
+                        <p class="mb-0">
+                            "The medication tracking and health monitoring features help me provide better care. 
+                            It's like having an assistant that never sleeps."
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta py-5 bg-primary text-white">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8 animate__animated animate__fadeInLeft">
+                <h2 class="mb-3">Ready to Transform Healthcare Management?</h2>
+                <p class="lead mb-0">
+                    Join thousands of families and caregivers who trust CareLink for their healthcare coordination needs.
+                </p>
+            </div>
+            <div class="col-lg-4 text-lg-end mt-4 mt-lg-0 animate__animated animate__fadeInRight">
+                {% if not user.is_authenticated %}
+                    <a href="{% url 'carelink:register' %}" class="btn btn-light btn-lg">
+                        Get Started Now
+                        <i class="fas fa-arrow-right ms-2"></i>
+                    </a>
+                {% else %}
+                    <a href="{% url 'carelink:dashboard' %}" class="btn btn-light btn-lg">
+                        Go to Dashboard
+                        <i class="fas fa-columns ms-2"></i>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="stats py-5">
+    <div class="container">
+        <div class="row g-4 text-center">
+            <div class="col-md-3 animate__animated animate__fadeInUp">
+                <div class="stat-item">
+                    <h3 class="display-4 fw-bold text-primary mb-2">5K+</h3>
+                    <p class="text-muted mb-0">Active Users</p>
+                </div>
+            </div>
+            <div class="col-md-3 animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
+                <div class="stat-item">
+                    <h3 class="display-4 fw-bold text-primary mb-2">98%</h3>
+                    <p class="text-muted mb-0">Satisfaction Rate</p>
+                </div>
+            </div>
+            <div class="col-md-3 animate__animated animate__fadeInUp" style="animation-delay: 0.4s;">
+                <div class="stat-item">
+                    <h3 class="display-4 fw-bold text-primary mb-2">24/7</h3>
+                    <p class="text-muted mb-0">Support Available</p>
+                </div>
+            </div>
+            <div class="col-md-3 animate__animated animate__fadeInUp" style="animation-delay: 0.6s;">
+                <div class="stat-item">
+                    <h3 class="display-4 fw-bold text-primary mb-2">100%</h3>
+                    <p class="text-muted mb-0">HIPAA Compliant</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Animate elements when they come into view
+    const animateOnScroll = () => {
+        const elements = document.querySelectorAll('.animate__animated');
+        elements.forEach(element => {
+            if (isElementInViewport(element)) {
+                element.style.visibility = 'visible';
+                element.style.opacity = '1';
+            }
+        });
+    };
+
+    const isElementInViewport = el => {
+        const rect = el.getBoundingClientRect();
+        return (
+            rect.top >= 0 &&
+            rect.left >= 0 &&
+            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+            rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+        );
+    };
+
+    // Initial check for elements in viewport
+    document.addEventListener('DOMContentLoaded', animateOnScroll);
+    // Check for elements on scroll
+    window.addEventListener('scroll', animateOnScroll);
+</script>
+{% endblock %}
