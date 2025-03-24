@@ -21,8 +21,9 @@ jobs:
             cd /home/ubuntu/carelink
             git pull origin main
             sudo docker-compose -f carelinkup.yml down
+            sudo  docker image prune -f
             sudo docker build . -t carelink:latest
             sudo docker-compose -f carelinkup.yml up -d
-            sudo docker image prune -f
+            
 
             
