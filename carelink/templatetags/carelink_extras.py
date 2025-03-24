@@ -1,5 +1,6 @@
 from django import template
 from decimal import Decimal
+from django.utils import timezone
 
 register = template.Library()
 
@@ -41,3 +42,24 @@ def get_item(dictionary, key):
     # Convert key to string if it's not already
     str_key = str(key)
     return dictionary.get(str_key) 
+
+@register.filter
+def filter_status(queryset, status):
+    """Filter a queryset by status field"""
+    return [obj for obj in queryset if obj.status == status]
+
+@register.filter
+def exclude_id(queryset, id_to_exclude):
+    """Exclude an object from queryset by id"""
+    return [obj for obj in queryset if obj.id != id_to_exclude]
+
+@register.filter
+def get_age(birthdate):
+    """Calculate age from birthdate"""
+    if not birthdate:
+        return None
+    today = timezone.now().date()
+    age = today.year - birthdate.year
+    if today.month < birthdate.month or (today.month == birthdate.month and today.day < birthdate.day):
+        age -= 1
+    return age

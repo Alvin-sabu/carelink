@@ -1,277 +1,293 @@
-{% extends "carelink/base.html" %}
+{% extends 'carelink/base.html' %}
 {% load static %}
-{% load carelink_extras %}
 
 {% block title %}Family Dashboard - CareLink{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4 py-5">
-    <div class="card border-0 shadow-sm bg-white mb-4">
-        <div class="card-body p-4" style="background: linear-gradient(to right, #f5f8ff, #ffffff);">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h2 class="mb-1 fw-bold" style="color: #2c5282;">Family Dashboard</h2>
-                    <p class="text-muted mb-0">Manage care for your loved ones</p>
-                </div>
-                <div>
-                    <button class="btn px-3" data-bs-toggle="modal" data-bs-target="#newServiceRequestModal" 
-                            style="background-color: #3182ce; color: white; border: none;">
-                        <i class="fas fa-plus me-2"></i>New Service Request
-                    </button>
+<div class="container-fluid py-4">
+    <!-- Welcome Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-1">Welcome, {{ user.get_full_name }}</h4>
+                            <p class="mb-0 opacity-75">Family Member Dashboard</p>
+                        </div>
+                        <div class="text-end">
+                            <p class="mb-0"><i class="fas fa-calendar me-2"></i>{{ current_date|date:"l, F j, Y" }}</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    {% if not has_patients %}
-        <div class="card shadow-sm mb-4">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-3">
-                    <i class="fas fa-info-circle fa-2x me-3 text-primary"></i>
-                    <h4 class="card-title mb-0">Welcome to CareLink</h4>
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start border-4 border-primary h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small text-uppercase fw-bold">Active Care Requests</div>
+                            <div class="h3 mb-0 mt-2">{{ active_care_requests }}</div>
+                        </div>
+                        <div class="text-primary">
+                            <i class="fas fa-clipboard-list fa-2x opacity-75"></i>
+                        </div>
+                    </div>
                 </div>
-                <p class="text-muted">You currently don't have any patients registered. Click "New Service Request" to get started.</p>
             </div>
         </div>
-    {% else %}
-        {% for patient in patients %}
-            <div class="card shadow-sm mb-4">
-                <!-- Health Metrics Overview -->
-                <div class="card-header bg-white py-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0 fw-bold text-primary">{{ patient.first_name }} {{ patient.last_name }}</h5>
-                        <div>
-                            <a href="{% url 'carelink:health_dashboard' patient.id %}" class="btn btn-sm btn-primary me-2">
-                                <i class="fas fa-chart-line me-1"></i>Health Dashboard
-                            </a>
-                            <a href="{% url 'carelink:patient_detail' patient.id %}" class="btn btn-sm btn-outline-primary">
-                                View Full Profile
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Quick Stats Section -->
-                <div class="card-body border-bottom">
-                    <div class="row g-3">
-                        <div class="col-md-3">
-                            <div class="p-3 bg-light rounded">
-                                <h6 class="text-primary mb-1"><i class="fas fa-calendar-check me-2"></i>Next Appointment</h6>
-                                <p class="mb-0" id="next-appointment-{{ patient.id }}">Loading...</p>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="p-3 bg-light rounded">
-                                <h6 class="text-primary mb-1"><i class="fas fa-pills me-2"></i>Medication Adherence</h6>
-                                <p class="mb-0" id="med-adherence-{{ patient.id }}">Loading...</p>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="p-3 bg-light rounded">
-                                <h6 class="text-primary mb-1"><i class="fas fa-exclamation-circle me-2"></i>Alerts</h6>
-                                <p class="mb-0" id="alerts-{{ patient.id }}">Loading...</p>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="p-3 bg-light rounded">
-                                <h6 class="text-primary mb-1"><i class="fas fa-tasks me-2"></i>Task Progress</h6>
-                                <div class="progress" style="height: 20px;">
-                                    <div class="progress-bar" role="progressbar" id="task-progress-{{ patient.id }}" style="width: 0%">0%</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start border-4 border-success h-100">
                 <div class="card-body">
-                    <div class="row">
-                        <!-- Health Logs Section -->
-                        <div class="col-md-4">
-                            <div class="card h-100 border-0 shadow-sm">
-                                <div class="card-header bg-white">
-                                    <h6 class="mb-0 text-primary">
-                                        <i class="fas fa-heartbeat me-2"></i>Recent Health Logs
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    {% with patient_id_str=patient.id|stringformat:"s" %}
-                                        {% with patient_data_item=patient_data|get_item:patient_id_str|default:None %}
-                                            {% if patient_data_item %}
-                                                {% with logs=patient_data_item|get_item:'recent_health_logs'|default:None %}
-                                                    {% if logs %}
-                                                        <div class="list-group list-group-flush">
-                                                            {% for log in logs %}
-                                                                <div class="list-group-item px-0">
-                                                                    <div class="d-flex justify-content-between align-items-center">
-                                                                        <div>
-                                                                            <h6 class="mb-1">{{ log.log_type }}</h6>
-                                                                            <small class="text-muted">{{ log.timestamp|date:"M d, Y" }}</small>
-                                                                        </div>
-                                                                        <span class="badge bg-info">{{ log.value }} {{ log.unit }}</span>
-                                                                    </div>
-                                                                    {% if log.notes %}
-                                                                        <small class="text-muted d-block mt-1">{{ log.notes }}</small>
-                                                                    {% endif %}
-                                                                </div>
-                                                            {% endfor %}
-                                                        </div>
-                                                    {% else %}
-                                                        <p class="text-muted mb-0">No recent health logs available.</p>
-                                                    {% endif %}
-                                                {% endwith %}
-                                            {% else %}
-                                                <p class="text-muted mb-0">No recent health logs available.</p>
-                                            {% endif %}
-                                        {% endwith %}
-                                    {% endwith %}
-                                </div>
-                            </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small text-uppercase fw-bold">Active Caregivers</div>
+                            <div class="h3 mb-0 mt-2">{{ active_caregivers }}</div>
                         </div>
-                        
-                        <!-- Medications Section -->
-                        <div class="col-md-4">
-                            <div class="card h-100 border-0 shadow-sm">
-                                <div class="card-header bg-white">
-                                    <h6 class="mb-0 text-primary">
-                                        <i class="fas fa-pills me-2"></i>Current Medications
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    {% with patient_id_str=patient.id|stringformat:"s" %}
-                                        {% with patient_data_item=patient_data|get_item:patient_id_str|default:None %}
-                                            {% if patient_data_item %}
-                                                {% with meds=patient_data_item|get_item:'recent_medications'|default:None %}
-                                                    {% if meds %}
-                                                        <div class="list-group list-group-flush">
-                                                            {% for med in meds %}
-                                                                <div class="list-group-item px-0">
-                                                                    <h6 class="mb-1">{{ med.name }}</h6>
-                                                                    <p class="mb-1 small">
-                                                                        <span class="text-muted">Dosage:</span>
-                                                                        {{ med.dosage }}
-                                                                    </p>
-                                                                    {% if med.next_dose %}
-                                                                        <p class="mb-0 small">
-                                                                            <span class="text-muted">Next dose:</span>
-                                                                            {{ med.next_dose|date:"M d, Y h:i A" }}
-                                                                        </p>
-                                                                    {% endif %}
-                                                                </div>
-                                                            {% endfor %}
-                                                        </div>
-                                                    {% else %}
-                                                        <p class="text-muted mb-0">No current medications.</p>
-                                                    {% endif %}
-                                                {% endwith %}
-                                            {% else %}
-                                                <p class="text-muted mb-0">No current medications.</p>
-                                            {% endif %}
-                                        {% endwith %}
-                                    {% endwith %}
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Tasks Section -->
-                        <div class="col-md-4">
-                            <div class="card h-100 border-0 shadow-sm">
-                                <div class="card-header bg-white">
-                                    <h6 class="mb-0 text-primary">
-                                        <i class="fas fa-tasks me-2"></i>Upcoming Tasks
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    {% with patient_id_str=patient.id|stringformat:"s" %}
-                                        {% with patient_data_item=patient_data|get_item:patient_id_str|default:None %}
-                                            {% if patient_data_item %}
-                                                {% with tasks=patient_data_item|get_item:'upcoming_tasks'|default:None %}
-                                                    {% if tasks %}
-                                                        <div class="list-group list-group-flush">
-                                                            {% for task in tasks %}
-                                                                <div class="list-group-item px-0">
-                                                                    <h6 class="mb-1">{{ task.title }}</h6>
-                                                                    <p class="mb-1 small">
-                                                                        <span class="text-muted">Due:</span>
-                                                                        {{ task.due_date|date:"M d, Y h:i A" }}
-                                                                    </p>
-                                                                    {% if task.description %}
-                                                                        <p class="mb-0 small text-muted">{{ task.description }}</p>
-                                                                    {% endif %}
-                                                                </div>
-                                                            {% endfor %}
-                                                        </div>
-                                                    {% else %}
-                                                        <p class="text-muted mb-0">No upcoming tasks.</p>
-                                                    {% endif %}
-                                                {% endwith %}
-                                            {% else %}
-                                                <p class="text-muted mb-0">No upcoming tasks.</p>
-                                            {% endif %}
-                                        {% endwith %}
-                                    {% endwith %}
-                                </div>
-                            </div>
+                        <div class="text-success">
+                            <i class="fas fa-user-nurse fa-2x opacity-75"></i>
                         </div>
                     </div>
                 </div>
             </div>
-        {% endfor %}
-    {% endif %}
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start border-4 border-info h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small text-uppercase fw-bold">Unread Messages</div>
+                            <div class="h3 mb-0 mt-2">{{ unread_messages }}</div>
+                        </div>
+                        <div class="text-info">
+                            <i class="fas fa-envelope fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start border-4 border-warning h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small text-uppercase fw-bold">Pending Tasks</div>
+                            <div class="h3 mb-0 mt-2">{{ pending_tasks }}</div>
+                        </div>
+                        <div class="text-warning">
+                            <i class="fas fa-tasks fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row">
+        <!-- Patient List -->
+        <div class="col-xl-8 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users me-2 text-primary"></i>Family Members Under Care
+                    </h5>
+                    <a href="{% url 'carelink:submit_care_request' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i>New Care Request
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="px-4">Patient</th>
+                                    <th>Status</th>
+                                    <th>Caregiver</th>
+                                    <th>Last Update</th>
+                                    <th class="text-end px-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for patient in patients %}
+                                <tr>
+                                    <td class="px-4">
+                                        <div class="d-flex align-items-center">
+                                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                <i class="fas fa-user text-primary"></i>
+                                            </div>
+                                            <div class="ms-3">
+                                                <h6 class="mb-0">{{ patient.first_name }} {{ patient.last_name }}</h6>
+                                                <small class="text-muted">{{ patient.medical_condition|truncatechars:30 }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if patient.assigned_caregiver %}
+                                            <span class="badge bg-success bg-opacity-10 text-success">Active Care</span>
+                                        {% else %}
+                                            <span class="badge bg-warning bg-opacity-10 text-warning">Pending Assignment</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if patient.assigned_caregiver %}
+                                            {{ patient.assigned_caregiver.get_full_name }}
+                                        {% else %}
+                                            <span class="text-muted">Not Assigned</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock me-1"></i>{{ patient.updated_at|timesince }} ago
+                                        </small>
+                                    </td>
+                                    <td class="text-end px-4">
+                                        <a href="{% url 'carelink:patient_detail' patient.id %}" class="btn btn-sm btn-outline-primary me-2">
+                                            <i class="fas fa-eye me-1"></i>View
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li>
+                                                <a class="dropdown-item" href="{% url 'carelink:health_dashboard' patient.id %}">
+                                                    <i class="fas fa-chart-line me-2"></i>Health Dashboard
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="{% url 'carelink:conversation' patient.assigned_caregiver.id patient.id %}">
+                                                    <i class="fas fa-comment-medical me-2"></i>Message Caregiver
+                                                    {% if unread_messages > 0 %}
+                                                    <span class="badge bg-danger ms-2">{{ unread_messages }}</span>
+                                                    {% endif %}
+                                                </a>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#reportIssueModal" onclick="setReportPatientId({{ patient.id }}); return false;">
+                                                    <i class="fas fa-exclamation-circle me-2"></i>Report Issue
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-5">
+                                        <div class="text-muted">
+                                            <i class="fas fa-user-plus fa-3x mb-3"></i>
+                                            <h5>No Family Members Under Care</h5>
+                                            <p class="mb-0">Start by submitting a care request for your family member.</p>
+                                            <a href="{% url 'carelink:submit_care_request' %}" class="btn btn-primary mt-3">
+                                                <i class="fas fa-plus me-1"></i>Submit Care Request
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Feed -->
+        <div class="col-xl-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bell me-2 text-primary"></i>Recent Activities
+                    </h5>
+                    <a href="{% url 'carelink:notifications_list' %}" class="btn btn-link btn-sm text-decoration-none">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for activity in recent_activities %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ activity.title }}</h6>
+                                    <p class="mb-1 text-muted small">{{ activity.message }}</p>
+                                </div>
+                                <small class="text-muted">{{ activity.created_at|timesince }} ago</small>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-stream text-muted fa-2x mb-3"></i>
+                            <p class="text-muted mb-0">No recent activities to display</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<!-- New Service Request Modal -->
-<div class="modal fade" id="newServiceRequestModal" tabindex="-1" aria-hidden="true">
+<!-- Report Issue Modal -->
+<div class="modal fade" id="reportIssueModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">New Service Request</h5>
+                <h5 class="modal-title">Report an Issue</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="post" action="{% url 'carelink:submit_care_request' %}" class="needs-validation" novalidate>
-                {% csrf_token %}
-                <input type="hidden" name="request_type" value="SERVICE">
-                <div class="modal-body">
+            <div class="modal-body">
+                <form id="reportIssueForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="reportPatientId" name="patient_id">
                     <div class="mb-3">
-                        <label class="form-label">Patient <span class="text-danger">*</span></label>
-                        <select name="patient_id" id="patient_select" class="form-select" required>
-                            <option value="">Select patient...</option>
-                            {% for patient in patients %}
-                                <option value="{{ patient.id }}">{{ patient.first_name }} {{ patient.last_name }}</option>
-                            {% endfor %}
+                        <label for="issueType" class="form-label">Issue Type</label>
+                        <select class="form-select" id="issueType" name="issue_type" required>
+                            <option value="">Select Issue Type</option>
+                            <option value="CARE_QUALITY">Care Quality Concern</option>
+                            <option value="COMMUNICATION">Communication Problem</option>
+                            <option value="MEDICATION">Medication Issue</option>
+                            <option value="SCHEDULING">Scheduling Problem</option>
+                            <option value="OTHER">Other</option>
                         </select>
-                        <div class="invalid-feedback">Please select a patient.</div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Service Type <span class="text-danger">*</span></label>
-                        <select name="service_type" class="form-select" required>
-                            <option value="">Select service type...</option>
-                            <option value="HOME_CARE">Home Care</option>
-                            <option value="MEDICAL_ASSISTANCE">Medical Assistance</option>
-                            <option value="RESPITE_CARE">Respite Care</option>
-                            <option value="SPECIALIZED_CARE">Specialized Care</option>
+                        <label for="issuePriority" class="form-label">Priority</label>
+                        <select class="form-select" id="issuePriority" name="priority" required>
+                            <option value="">Select Priority</option>
+                            <option value="LOW">Low</option>
+                            <option value="MEDIUM">Medium</option>
+                            <option value="HIGH">High</option>
+                            <option value="URGENT">Urgent</option>
                         </select>
-                        <div class="invalid-feedback">Please select a service type.</div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Requested Date <span class="text-danger">*</span></label>
-                        <input type="date" name="requested_date" class="form-control" required>
-                        <div class="invalid-feedback">Please select a date.</div>
+                        <label for="issueDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="issueDescription" name="description" rows="4" required></textarea>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Preferred Time <span class="text-danger">*</span></label>
-                        <input type="time" name="preferred_time" class="form-control" required>
-                        <div class="invalid-feedback">Please select a time.</div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Notes</label>
-                        <textarea name="notes" class="form-control" rows="3"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Submit Request</button>
-                </div>
-            </form>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitIssueReport();">
+                    Submit Report
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Toast -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div id="successToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                Issue reported successfully!
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
         </div>
     </div>
 </div>
@@ -279,129 +295,49 @@
 
 {% block extra_js %}
 <script>
-    function setPatientId(patientId) {
-        document.getElementById('patient_select').value = patientId;
-    }
-    
-    // Form validation
-    (function() {
-        'use strict';
-        window.addEventListener('load', function() {
-            var forms = document.getElementsByClassName('needs-validation');
-            var validation = Array.prototype.filter.call(forms, function(form) {
-                form.addEventListener('submit', function(event) {
-                    if (form.checkValidity() === false) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                    }
-                    form.classList.add('was-validated');
-                }, false);
-            });
-        }, false);
-    })();
+function setReportPatientId(patientId) {
+    document.getElementById('reportPatientId').value = patientId;
+}
 
-    // Health Metrics Updates
-    function updatePatientMetrics(patientId) {
-        // Fetch next appointment
-        fetch(`/carelink/api/patient/${patientId}/next-appointment/`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                const element = document.getElementById(`next-appointment-${patientId}`);
-                if (data.appointment) {
-                    element.textContent = new Date(data.appointment).toLocaleDateString();
-                } else {
-                    element.textContent = 'No upcoming appointments';
-                }
-            })
-            .catch(error => {
-                const element = document.getElementById(`next-appointment-${patientId}`);
-                element.textContent = 'Error loading data';
-                console.error('Error:', error);
-            });
+function submitIssueReport() {
+    const form = document.getElementById('reportIssueForm');
+    const formData = new FormData(form);
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-        // Fetch medication adherence
-        fetch(`/carelink/api/patient/${patientId}/medication-adherence/`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                const element = document.getElementById(`med-adherence-${patientId}`);
-                element.textContent = `${data.adherence_rate}%`;
-                element.className = data.adherence_rate >= 90 ? 'text-success' : 'text-warning';
-            })
-            .catch(error => {
-                const element = document.getElementById(`med-adherence-${patientId}`);
-                element.textContent = 'Error loading data';
-                console.error('Error:', error);
-            });
-
-        // Fetch alerts
-        fetch(`/carelink/api/patient/${patientId}/alerts/`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                const element = document.getElementById(`alerts-${patientId}`);
-                element.textContent = `${data.alert_count} active alerts`;
-                if (data.alert_count > 0) {
-                    element.className = 'text-danger';
-                }
-            })
-            .catch(error => {
-                const element = document.getElementById(`alerts-${patientId}`);
-                element.textContent = 'Error loading data';
-                console.error('Error:', error);
-            });
-
-        // Fetch task progress
-        fetch(`/carelink/api/patient/${patientId}/task-progress/`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                const progressBar = document.getElementById(`task-progress-${patientId}`);
-                progressBar.style.width = `${data.completion_rate}%`;
-                progressBar.textContent = `${data.completion_rate}%`;
-                
-                if (data.completion_rate >= 75) {
-                    progressBar.className = 'progress-bar bg-success';
-                } else if (data.completion_rate >= 50) {
-                    progressBar.className = 'progress-bar bg-warning';
-                } else {
-                    progressBar.className = 'progress-bar bg-danger';
-                }
-            })
-            .catch(error => {
-                const progressBar = document.getElementById(`task-progress-${patientId}`);
-                progressBar.style.width = '100%';
-                progressBar.textContent = 'Error loading data';
-                progressBar.className = 'progress-bar bg-danger';
-                console.error('Error:', error);
-            });
-    }
-
-    // Update metrics every 5 minutes
-    document.addEventListener('DOMContentLoaded', function() {
-        const patients = document.querySelectorAll('[id^="next-appointment-"]');
-        patients.forEach(element => {
-            const patientId = element.id.replace('next-appointment-', '');
-            updatePatientMetrics(patientId);
-            setInterval(() => updatePatientMetrics(patientId), 300000);
-        });
+    fetch('{% url "carelink:report_issue" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            patient_id: formData.get('patient_id'),
+            issue_type: formData.get('issue_type'),
+            priority: formData.get('priority'),
+            description: formData.get('description')
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('reportIssueModal'));
+            modal.hide();
+            
+            // Show success toast
+            const toast = new bootstrap.Toast(document.getElementById('successToast'));
+            toast.show();
+            
+            // Reset form
+            form.reset();
+        } else {
+            alert(data.error || 'Failed to submit report. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while submitting the report. Please try again.');
     });
+}
 </script>
 {% endblock %}

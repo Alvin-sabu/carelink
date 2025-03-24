@@ -10,6 +10,9 @@ from decimal import Decimal
 import numpy as np
 from scipy import stats
 from carelink.models import HealthLog, HealthReport
+import logging
+
+logger = logging.getLogger(__name__)
 
 class DecimalEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -606,7 +609,7 @@ class HealthAnalyzer:
         risks = {'factors': [], 'score': 0}
         
         for vital, trend in trends.items():
-            if trend['significance'] == 'significant':
+            if vital != 'blood_pressure' and trend['significance'] == 'significant':
                 if trend['magnitude'] > 10:  # Significant change
                     severity = 'high' if trend['magnitude'] > 20 else 'moderate'
                     risks['factors'].append({
@@ -789,14 +792,18 @@ class HealthAnalyzer:
         return list(set(recommendations))  # Remove duplicates
 
     def generate_report(self, report_type):
-        if report_type == 'DAILY':
-            return self.generate_daily_report()
-        elif report_type == 'WEEKLY':
-            return self.generate_weekly_report()
-        elif report_type == 'MONTHLY':
-            return self.generate_monthly_report()
-        else:
-            raise ValueError("Invalid report type")
+        try:
+            if report_type == 'DAILY':
+                return self.generate_daily_report()
+            elif report_type == 'WEEKLY':
+                return self.generate_weekly_report()
+            elif report_type == 'MONTHLY':
+                return self.generate_monthly_report()
+            else:
+                raise ValueError(f"Invalid report type: {report_type}")
+        except Exception as e:
+            logger.error(f"Error generating {report_type} report: {str(e)}")
+            raise
 
     def generate_daily_report(self):
         return self._generate_report_for_period(days=1)
@@ -812,18 +819,30 @@ class HealthAnalyzer:
         start_date = end_date - timedelta(days=days)
         health_logs = HealthLog.objects.filter(patient=self.patient, timestamp__range=(start_date, end_date))
 
-        report_data = {
-            'temperature': [float(log.temperature) if log.temperature is not None else None for log in health_logs],
-            'blood_pressure': [log.blood_pressure for log in health_logs],
-            'pulse_rate': [log.pulse_rate for log in health_logs],
-            'oxygen_level': [log.oxygen_level for log in health_logs],
-            'notes': [log.notes for log in health_logs],
-        }
+        # Check if there are any logs
+        if not health_logs.exists():
+            report_data = {
+                'warning': ['No health data available for the selected period.'],
+                'temperature': [],
+                'blood_pressure': [],
+                'pulse_rate': [],
+                'oxygen_level': [],
+                'notes': []
+            }
+        else:
+            report_data = {
+                'temperature': [float(log.temperature) if log.temperature is not None else None for log in health_logs],
+                'blood_pressure': [log.blood_pressure if log.blood_pressure else None for log in health_logs],
+                'pulse_rate': [log.pulse_rate if log.pulse_rate is not None else None for log in health_logs],
+                'oxygen_level': [log.oxygen_level if log.oxygen_level is not None else None for log in health_logs],
+                'notes': [log.notes if log.notes else None for log in health_logs],
+                'timestamps': [log.timestamp.strftime('%Y-%m-%d %H:%M') for log in health_logs]
+            }
 
         report = HealthReport.objects.create(
             patient=self.patient,
             report_period=days,
-            report_data=json.dumps(report_data, cls=DecimalEncoder),  # Use DecimalEncoder
+            report_data=json.dumps(report_data, cls=DecimalEncoder),
             report_type=self._get_report_type(days)
         )
 

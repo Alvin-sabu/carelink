@@ -6,9 +6,10 @@ from django.conf.urls.static import static
 from django.views.static import serve
 from django.urls import re_path
 from carelink.forms import CustomAuthenticationForm
+from carelink.admin import admin_site
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('admin/', admin_site.urls),
     path('carelink/', include('carelink.urls', namespace='carelink')),
     path('carelink/accounts/login/', auth_views.LoginView.as_view(
         template_name='registration/login.html',
@@ -21,4 +22,3 @@ urlpatterns = [
     }),
     path('', include('carelink.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
- 

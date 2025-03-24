@@ -4,7 +4,7 @@ import requests
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, HttpResponseServerError, FileResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
@@ -12,14 +12,14 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.decorators import login_required
 from django.views.generic import ListView, CreateView, DetailView, UpdateView, DeleteView, View, TemplateView
 from django.urls import reverse_lazy, reverse
-from django.db.models import Q, Avg, Count
+from django.db.models import Q, Avg, Count, Max
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from .models import (
     User, Patient, Task, Medication, Communication,
     CareRequest, Notification, HealthLog, HealthCheckSchedule,
     HealthAnalysis, HealthTip, HealthDocument, HealthInsight, HealthPrediction, MLRecommendation,
-    MLPrediction, MLInsight, HealthReport, MedicationSchedule, MedicationLog
+    MLPrediction, MLInsight, HealthReport, MedicationSchedule, MedicationLog, IssueReport
 )
 from .forms import (
     TaskForm, MedicationForm, CommunicationForm, CareRequestForm,
@@ -29,8 +29,11 @@ from .forms import (
 from datetime import timedelta, datetime
 from io import BytesIO
 from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.units import inch
+from reportlab.lib import colors
 from .services.health_analyzer import HealthAnalyzer
 from .services.ml_service import HealthMLService
 from django.core.mail import send_mail, EmailMultiAlternatives
@@ -253,6 +256,12 @@ class CaregiverDashboardView(LoginRequiredMixin, UserPassesTestMixin, ListView):
             patient = self.request.user.assigned_patient
             current_time = timezone.now()
             
+            # Get unread messages count
+            context['unread_messages'] = Communication.objects.filter(
+                receiver=self.request.user,
+                is_read=False
+            ).count()
+            
             # Get next appointment from health check schedule
             next_appointment = HealthCheckSchedule.objects.filter(
                 patient=patient,
@@ -339,9 +348,6 @@ class FamilyDashboardView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         return Patient.objects.filter(
             family_members=self.request.user
         ).prefetch_related(
-            'health_logs',
-            'health_analyses',
-            'medications',
             'tasks',
             'assigned_caregiver'
         ).order_by('first_name')
@@ -350,53 +356,37 @@ class FamilyDashboardView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         context = super().get_context_data(**kwargs)
         current_time = timezone.now()
         patients = self.get_queryset()
-        context['has_patients'] = patients.exists()
+        
+        # Add current date
+        context['current_date'] = current_time
+        
+        # Get active care requests
+        context['active_care_requests'] = CareRequest.objects.filter(
+            user=self.request.user,
+            status='PENDING'
+        ).count()
+        
+        # Get active caregivers
+        context['active_caregivers'] = len(set(
+            patient.assigned_caregiver.id 
+            for patient in patients 
+            if patient.assigned_caregiver
+        ))
+        
+        # Get unread messages
+        context['unread_messages'] = Communication.objects.filter(
+            receiver=self.request.user,
+            is_read=False
+        ).count()
+        
+        # Get pending tasks
+        context['pending_tasks'] = Task.objects.filter(
+            patient__family_members=self.request.user,
+            status='PENDING'
+        ).count()
 
-        # Add patient-specific data
-        patient_data = {}
-        for patient in patients:
-            # Convert patient.id to string for dictionary key
-            patient_id = str(patient.id)
-            
-            # Get active medications with their next scheduled dose
-            active_medications = patient.medications.filter(
-                end_date__gte=current_time,
-                status='ACTIVE'
-            ).prefetch_related('schedules').order_by('start_date')[:5]
-            
-            # Format medication data with next dose information
-            medication_data = []
-            for med in active_medications:
-                next_schedule = med.schedules.filter(
-                    scheduled_time__gte=current_time
-                ).order_by('scheduled_time').first()
-                
-                medication_data.append({
-                    'name': med.name,
-                    'next_dose': next_schedule.scheduled_time if next_schedule else None,
-                    'dosage': med.dosage,
-                    'instructions': med.instructions
-                })
-
-            # Get recent health logs
-            recent_health_logs = list(patient.health_logs.all().order_by('-timestamp')[:5])
-
-            # Get upcoming tasks
-            upcoming_tasks = list(patient.tasks.filter(
-                status__in=['PENDING', 'IN_PROGRESS'],
-                due_date__gte=current_time
-            ).order_by('due_date')[:5])
-
-            patient_data[patient_id] = {
-                'recent_health_logs': recent_health_logs,
-                'recent_medications': medication_data,
-                'upcoming_tasks': upcoming_tasks
-            }
-
-        context['patient_data'] = patient_data
         return context
-    
-    
+
 class PatientDetailView(LoginRequiredMixin, DetailView):
     model = Patient
     template_name = 'carelink/patient_detail.html'
@@ -545,29 +535,52 @@ class ConversationView(LoginRequiredMixin, ListView):
     context_object_name = 'messages'
 
     def get_queryset(self):
-        user = self.request.user
-        other_user_id = self.kwargs.get('user_id')
+        user_id = self.kwargs.get('user_id')
         patient_id = self.kwargs.get('patient_id')
         
-        # Get all messages between these users for this patient
-        messages = Communication.objects.filter(
-            Q(sender=user, receiver_id=other_user_id, patient_id=patient_id) |
-            Q(sender_id=other_user_id, receiver=user, patient_id=patient_id)
+        # Get messages between current user and other user for this patient
+        return Communication.objects.filter(
+            Q(sender=self.request.user, receiver_id=user_id, patient_id=patient_id) |
+            Q(receiver=self.request.user, sender_id=user_id, patient_id=patient_id)
         ).order_by('timestamp')
-        
-        # Mark unread messages as read
-        messages.filter(receiver=user, is_read=False).update(is_read=True)
-        
-        return messages
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        user_id = self.kwargs.get('user_id')
         patient_id = self.kwargs.get('patient_id')
-        other_user_id = self.kwargs.get('user_id')
         
+        context['other_user'] = get_object_or_404(User, id=user_id)
         context['patient'] = get_object_or_404(Patient, id=patient_id)
-        context['other_user'] = get_object_or_404(User, id=other_user_id)
+        
+        # Mark unread messages as read
+        if not self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            unread_messages = Communication.objects.filter(
+                receiver=self.request.user,
+                sender_id=user_id,
+                patient_id=patient_id,
+                is_read=False
+            )
+            for message in unread_messages:
+                message.mark_as_read()
+        
         return context
+
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+        
+        # For AJAX requests, only return the messages container
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            messages_html = render_to_string(
+                'carelink/conversation.html',
+                self.get_context_data(),
+                request=request
+            )
+            return JsonResponse({
+                'messages': messages_html,
+                'success': True
+            })
+        
+        return response
 
 class HealthTipListView(ListView):
     model = HealthTip
@@ -710,7 +723,7 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_object(self, queryset=None):
         return self.request.user
-
+    
     def form_valid(self, form):
         messages.success(self.request, 'Profile updated successfully.')
         return super().form_valid(form)
@@ -789,48 +802,130 @@ class ConversationView(LoginRequiredMixin, ListView):
         context['other_user'] = get_object_or_404(User, id=other_user_id)
         return context
 
-class SendMessageView(LoginRequiredMixin, View):
-    def post(self, request, *args, **kwargs):
-        receiver_id = kwargs.get('receiver_id')
-        patient_id = request.POST.get('patient_id')
-        message_text = request.POST.get('message')
-        
-        if not all([receiver_id, patient_id, message_text]):
-            messages.error(request, 'Missing required information')
-            return redirect('carelink:messages')
-        
-        try:
-            receiver = User.objects.get(id=receiver_id)
-            patient = Patient.objects.get(id=patient_id)
-            
-            # Verify that both users are related to this patient
-            is_valid = False
-            if request.user.user_type == 'CAREGIVER':
-                is_valid = (patient.assigned_caregiver == request.user and 
-                          patient.family_members.filter(id=receiver.id).exists())
-            else:  # FAMILY
-                is_valid = (patient.family_members.filter(id=request.user.id).exists() and 
-                          patient.assigned_caregiver == receiver)
-            
-            if not is_valid:
-                messages.error(request, 'Invalid message recipient')
-                return redirect('carelink:messages')
-            
-            # Create and save the message
-            Communication.objects.create(
-                sender=request.user,
-                receiver=receiver,
-                patient=patient,
-                message=message_text
-            )
-            
-            messages.success(request, 'Message sent successfully')
-            return redirect('carelink:conversation', user_id=receiver_id, patient_id=patient_id)
-            
-        except (User.DoesNotExist, Patient.DoesNotExist):
-            messages.error(request, 'Invalid user or patient')
-            return redirect('carelink:messages')
-    
+class HealthTipListView(ListView):
+    model = HealthTip
+    template_name = 'carelink/health_tips_list.html'
+    context_object_name = 'health_tips'
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return HealthTip.objects.all()
+        else:
+            return HealthTip.objects.filter(
+                Q(author__in=User.objects.filter(assigned_patients__in=user.assigned_patients.all())) |
+                Q(category__in=['GENERAL', 'ELDERLY', 'PREVENTIVE'])
+            ).distinct()
+
+class HealthTipCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    model = HealthTip
+    template_name = 'carelink/health_tip_form.html'
+    fields = ['title', 'content', 'category', 'image', 'source']
+    success_url = reverse_lazy('carelink:health_tips_list')
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        return super().form_valid(form)
+
+class HealthTipDetailView(DetailView):
+    model = HealthTip
+    template_name = 'carelink/health_tip_detail.html'
+    context_object_name = 'tip'
+
+class HealthTipUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = HealthTip
+    template_name = 'carelink/health_tip_form.html'
+    fields = ['title', 'content', 'category', 'image', 'source']
+    success_url = reverse_lazy('carelink:health_tips_list')
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+class HealthTipDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = HealthTip
+    template_name = 'carelink/health_tip_confirm_delete.html'
+    success_url = reverse_lazy('carelink:health_tips_list')
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+class HealthDocumentListView(LoginRequiredMixin, ListView):
+    model = HealthDocument
+    template_name = 'carelink/health_documents_list.html'
+    context_object_name = 'health_documents'
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.user_type == 'CAREGIVER':
+            return HealthDocument.objects.filter(
+                Q(user=user) |
+                Q(user__in=User.objects.filter(assigned_patients__in=user.assigned_patients.all()))
+            ).distinct()
+        else:  # FAMILY
+            return HealthDocument.objects.filter(
+                Q(user=user) |
+                Q(user__in=User.objects.filter(patients__in=user.patients.all()))
+            ).distinct()
+
+class HealthDocumentCreateView(LoginRequiredMixin, CreateView):
+    model = HealthDocument
+    form_class = HealthDocumentForm
+    template_name = 'carelink/health_document_form.html'
+    success_url = reverse_lazy('carelink:health_document_list')
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        return super().form_valid(form)
+
+class HealthDocumentDetailView(DetailView):
+    model = HealthDocument
+    template_name = 'carelink/health_document_detail.html'
+    context_object_name = 'health_document'
+
+class HealthDocumentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = HealthDocument
+    form_class = HealthDocumentForm
+    template_name = 'carelink/health_document_form.html'
+    success_url = reverse_lazy('carelink:health_document_list')
+
+    def test_func(self):
+        user = self.request.user
+        document_user = self.get_object().user
+
+        if user.user_type == 'CAREGIVER':
+            patients = user.assigned_patients.all()
+            family_members = User.objects.filter(patients__in=patients)
+            return user == document_user or document_user in family_members
+        elif user.user_type == 'FAMILY':
+            patients = User.objects.filter(family_members=user)
+            caregivers = User.objects.filter(assigned_patient__family_members=user)
+            return user == document_user or document_user in patients or document_user in caregivers
+        else:
+            return user == document_user
+
+class HealthDocumentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = HealthDocument
+    template_name = 'carelink/health_document_confirm_delete.html'
+    success_url = reverse_lazy('carelink:health_document_list')
+
+    def test_func(self):
+        user = self.request.user
+        document_user = self.get_object().user
+
+        if user.user_type == 'CAREGIVER':
+            patients = user.assigned_patients.all()
+            family_members = User.objects.filter(patients__in=patients)
+            return user == document_user or document_user in family_members
+        elif user.user_type == 'FAMILY':
+            patients = User.objects.filter(family_members=user)
+            caregivers = User.objects.filter(assigned_patient__family_members=user)
+            return user == document_user or document_user in patients or document_user in caregivers
+        else:
+            return user == document_user
+
 class HealthDashboardView(LoginRequiredMixin, UserPassesTestMixin, View):
     template_name = 'carelink/health_dashboard.html'
     
@@ -891,6 +986,9 @@ class GenerateHealthReportView(View):
             response['Content-Disposition'] = f'attachment; filename="{report_type.lower()}_health_report.pdf"'
             
             buffer = self._generate_pdf(report)
+            if buffer is None:
+                return HttpResponseServerError("PDF generation failed")
+                
             response.write(buffer.getvalue())
             buffer.close()
             
@@ -898,53 +996,183 @@ class GenerateHealthReportView(View):
         
         except Exception as e:
             logger.error("Report generation error: %s", e, exc_info=True)
-            return HttpResponseServerError("Report generation failed: %s" % str(e))
+            return HttpResponseServerError(f"Report generation failed: {str(e)}")
 
     def _generate_pdf(self, report):
         buffer = BytesIO()
         
         try:
-            doc = SimpleDocTemplate(buffer, pagesize=letter)
-            styles = getSampleStyleSheet()
-            story = []
-
-            # Add report details
-            story.append(Paragraph(f"{report.report_type} Health Report", styles['Title']))
-            story.append(Spacer(1, 12))
+            # Set up the document with a better page size and margins
+            doc = SimpleDocTemplate(
+                buffer,
+                pagesize=letter,
+                rightMargin=72,
+                leftMargin=72,
+                topMargin=72,
+                bottomMargin=72
+            )
             
-            story.append(Paragraph(f"Patient: {report.patient.first_name} {report.patient.last_name}", styles['Normal']))
-            story.append(Paragraph(f"Report Period: {report.report_period} days", styles['Normal']))
-            story.append(Paragraph(f"Generated Date: {report.generated_date.strftime('%Y-%m-%d')}", styles['Normal']))
-            story.append(Spacer(1, 12))
+            # Get styles and create custom styles
+            styles = getSampleStyleSheet()
+            styles.add(ParagraphStyle(
+                name='CustomTitle',
+                parent=styles['Title'],
+                fontSize=24,
+                spaceAfter=30,
+                textColor=colors.HexColor('#2c3e50')
+            ))
+            styles.add(ParagraphStyle(
+                name='CustomHeading',
+                parent=styles['Heading2'],
+                fontSize=14,
+                spaceAfter=10,
+                textColor=colors.HexColor('#34495e')
+            ))
+            styles.add(ParagraphStyle(
+                name='CustomNormal',
+                parent=styles['Normal'],
+                fontSize=10,
+                spaceAfter=5,
+                textColor=colors.HexColor('#2c3e50')
+            ))
+            
+            story = []
+            
+            # Add logo or header image if available
+            # story.append(Image('path/to/logo.png', width=100, height=50))
+            # story.append(Spacer(1, 20))
+            
+            # Add report header with better styling
+            title = f"{report.report_type.title()} Health Report"
+            story.append(Paragraph(title, styles['CustomTitle']))
+            
+            # Add report metadata with better formatting
+            story.append(Paragraph("Report Information", styles['CustomHeading']))
+            metadata_table_data = [
+                ['Patient Name:', f"{report.patient.first_name} {report.patient.last_name}"],
+                ['Report Period:', f"{report.report_period} days"],
+                ['Generated Date:', report.generated_date.strftime('%B %d, %Y %I:%M %p')],
+                ['Medical ID:', f"#{report.patient.id}"]
+            ]
+            metadata_table = Table(metadata_table_data, colWidths=[120, 300])
+            metadata_table.setStyle(TableStyle([
+                ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+                ('FONTSIZE', (0, 0), (-1, -1), 10),
+                ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#7f8c8d')),
+                ('TEXTCOLOR', (1, 0), (1, -1), colors.HexColor('#2c3e50')),
+                ('TOPPADDING', (0, 0), (-1, -1), 5),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+            ]))
+            story.append(metadata_table)
+            story.append(Spacer(1, 20))
 
             # Parse report data safely
             try:
                 report_data = json.loads(report.report_data) if report.report_data else {}
                 
-                for key, values in report_data.items():
-                    story.append(Paragraph(f"{key.capitalize()} Data:", styles['Heading3']))
-                    
-                    # Filter out None values and convert to strings
-                    filtered_values = [str(v) for v in values if v is not None]
-                    value_str = ', '.join(filtered_values) if filtered_values else "No data available"
-                    
-                    story.append(Paragraph(value_str, styles['Normal']))
-                    story.append(Spacer(1, 6))
+                # Check for warnings first
+                if 'warning' in report_data and report_data['warning']:
+                    story.append(Paragraph("Important Notes", styles['CustomHeading']))
+                    for warning in report_data['warning']:
+                        story.append(Paragraph(f"• {warning}", styles['CustomNormal']))
+                    story.append(Spacer(1, 15))
+                
+                # Process vital signs with better presentation
+                vital_signs = {
+                    'temperature': 'Body Temperature',
+                    'blood_pressure': 'Blood Pressure',
+                    'pulse_rate': 'Heart Rate',
+                    'oxygen_level': 'Oxygen Saturation',
+                    'notes': 'Clinical Notes'
+                }
 
+                # Get timestamps for all readings
+                timestamps = report_data.get('timestamps', [])
+
+                for key, title in vital_signs.items():
+                    if key in report_data and report_data[key]:
+                        story.append(Paragraph(title, styles['CustomHeading']))
+                        
+                        values = report_data[key]
+                        if values and any(v is not None for v in values):
+                            # Create table header with units
+                            units = {
+                                'temperature': '°C',
+                                'blood_pressure': 'mmHg',
+                                'pulse_rate': 'bpm',
+                                'oxygen_level': '%',
+                                'notes': ''
+                            }
+                            
+                            if key == 'notes':
+                                # Handle notes differently - as paragraphs
+                                for idx, note in enumerate(values):
+                                    if note:
+                                        timestamp = timestamps[idx] if idx < len(timestamps) else ''
+                                        story.append(Paragraph(f"<b>{timestamp}</b>: {note}", styles['CustomNormal']))
+                            else:
+                                # Create a table for numerical data
+                                table_data = [['Time', f'Value ({units[key]})']]
+                                table_data.extend([
+                                    [ts, str(val) if val is not None else 'N/A']
+                                    for ts, val in zip(timestamps, values)
+                                    if val is not None
+                                ])
+                                
+                                if len(table_data) > 1:  # Only create table if there's data
+                                    table = Table(table_data, colWidths=[200, 200])
+                                    table.setStyle(TableStyle([
+                                        # Header style
+                                        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#34495e')),
+                                        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                                        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+                                        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                                        ('FONTSIZE', (0, 0), (-1, 0), 12),
+                                        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                                        # Data rows
+                                        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f8f9fa')),
+                                        ('TEXTCOLOR', (0, 1), (-1, -1), colors.HexColor('#2c3e50')),
+                                        ('ALIGN', (0, 1), (-1, -1), 'CENTER'),
+                                        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                                        ('FONTSIZE', (0, 1), (-1, -1), 10),
+                                        ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#bdc3c7')),
+                                        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor('#f8f9fa'), colors.HexColor('#ecf0f1')]),
+                                    ]))
+                                    story.append(table)
+                                else:
+                                    story.append(Paragraph("No data available for this period", styles['CustomNormal']))
+                            
+                            story.append(Spacer(1, 15))
+                        else:
+                            story.append(Paragraph("No data recorded", styles['CustomNormal']))
+                            story.append(Spacer(1, 15))
+
+                # Add footer with page number
+                def add_page_number(canvas, doc):
+                    canvas.saveState()
+                    canvas.setFont('Helvetica', 9)
+                    canvas.setFillColor(colors.HexColor('#95a5a6'))
+                    page_num = canvas.getPageNumber()
+                    text = f"Page {page_num}"
+                    canvas.drawRightString(540, 50, text)
+                    canvas.drawString(72, 50, report.generated_date.strftime('%Y-%m-%d %H:%M'))
+                    canvas.restoreState()
+
+            except json.JSONDecodeError as json_error:
+                logger.error("JSON parsing error: %s", json_error, exc_info=True)
+                story.append(Paragraph("Error: Invalid report data format", styles['CustomHeading']))
             except Exception as data_error:
-                logger.error("Report data parsing error: %s", data_error, exc_info=True)
-                story.append(Paragraph("Error parsing report data", styles['Normal']))
+                logger.error("Report data processing error: %s", data_error, exc_info=True)
+                story.append(Paragraph("Error: Failed to process report data", styles['CustomHeading']))
 
-            # Build PDF
-            doc.build(story)
-            
+            # Build PDF with page numbers
+            doc.build(story, onFirstPage=add_page_number, onLaterPages=add_page_number)
             buffer.seek(0)
             return buffer
 
         except Exception as e:
             logger.error("PDF generation error: %s", e, exc_info=True)
-            raise HttpResponseServerError("PDF generation failed: %s" % str(e))
-    
+            return None
 
 class HealthTipListView(LoginRequiredMixin, ListView):
     model = HealthTip
@@ -1453,13 +1681,13 @@ class AddMedicationView(LoginRequiredMixin, CreateView):
         response = super().form_valid(form)
         
         # Create medication schedule based on frequency
-        if form.instance.frequency == 'DAILY':
+        if form.instance.frequency == 'daily':
             MedicationSchedule.objects.create(
                 medication=form.instance,
                 scheduled_time=datetime.strptime('09:00', '%H:%M').time(),
                 dosage_amount=form.instance.dosage
             )
-        elif form.instance.frequency == 'TWICE_DAILY':
+        elif form.instance.frequency == 'twice_daily':
             MedicationSchedule.objects.create(
                 medication=form.instance,
                 scheduled_time=datetime.strptime('09:00', '%H:%M').time(),
@@ -1470,26 +1698,10 @@ class AddMedicationView(LoginRequiredMixin, CreateView):
                 scheduled_time=datetime.strptime('21:00', '%H:%M').time(),
                 dosage_amount=form.instance.dosage
             )
-        elif form.instance.frequency == 'THREE_TIMES_DAILY':
-            times = ['09:00', '14:00', '21:00']
-            for time_str in times:
-                MedicationSchedule.objects.create(
-                    medication=form.instance,
-                    scheduled_time=datetime.strptime(time_str, '%H:%M').time(),
-                    dosage_amount=form.instance.dosage
-                )
-        elif form.instance.frequency == 'FOUR_TIMES_DAILY':
-            times = ['09:00', '13:00', '17:00', '21:00']
-            for time_str in times:
-                MedicationSchedule.objects.create(
-                    medication=form.instance,
-                    scheduled_time=datetime.strptime(time_str, '%H:%M').time(),
-                    dosage_amount=form.instance.dosage
-                )
         
         messages.success(self.request, 'Medication added successfully.')
         return response
-    
+
     def get_success_url(self):
         return reverse('carelink:patient_detail', kwargs={'pk': self.kwargs['pk']})
 
@@ -1500,6 +1712,53 @@ class ProfileView(LoginRequiredMixin, DetailView):
 
     def get_object(self, queryset=None):
         return self.request.user
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+
+        if user.user_type == 'CAREGIVER':
+            # Get caregiver-specific stats
+            context['active_tasks_count'] = Task.objects.filter(
+                caregiver=user,
+                status='PENDING'
+            ).count()
+            
+            context['completed_tasks_count'] = Task.objects.filter(
+                caregiver=user,
+                status='COMPLETED'
+            ).count()
+            
+            # Get patients assigned to this caregiver
+            context['patients_count'] = Patient.objects.filter(
+                assigned_caregiver=user
+            ).count()
+        else:
+            # Get patient/family member specific stats
+            context['care_requests_count'] = CareRequest.objects.filter(
+                user=user,
+                status='PENDING'
+            ).count()
+            
+            # For family members, get stats through their patients
+            patients = Patient.objects.filter(family_members=user)
+            if patients.exists():
+                # Count unique caregivers across all related patients
+                context['active_caregivers_count'] = User.objects.filter(
+                    user_type='CAREGIVER',
+                    assigned_patient__in=patients
+                ).distinct().count()
+                
+                # Count family members (excluding self) across all related patients
+                context['family_members_count'] = User.objects.filter(
+                    user_type='FAMILY',
+                    patients__in=patients
+                ).exclude(id=user.id).distinct().count()
+            else:
+                context['active_caregivers_count'] = 0
+                context['family_members_count'] = 0
+
+        return context
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     model = User
@@ -1655,7 +1914,7 @@ Required format:
         }
         
         # Call Gemini API
-        api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+        api_url = settings.GEMINI_API_URL
         api_key = settings.GEMINI_API_KEY
         
         logger.info("Checking Gemini API configuration")
@@ -1822,7 +2081,7 @@ def get_patient_medication_adherence(request, patient_id):
             # Count scheduled doses
             daily_doses = medication.schedules.count()
             days_active = min(30, (end_date.date() - medication.start_date).days + 1)
-            if days_active > 0:  # Only count if medication was active in the period
+            if days_active > 0:
                 total_scheduled_doses += daily_doses * days_active
             
             # Count taken doses
@@ -1882,14 +2141,17 @@ def get_patient_task_progress(request, patient_id):
             'completion_rate': completion_rate
         })
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=400)
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=400)
 
 @login_required
 @require_http_methods(['POST'])
 def mark_task_for_review(request, task_id):
     task = get_object_or_404(Task, id=task_id)
-    
-    # Ensure only the assigned caregiver can mark for review
+
+    # Ensure only the assigned caregiver can mark task for review
     if request.user != task.caregiver:
         return JsonResponse({'success': False, 'error': 'You are not assigned to this task'}, status=403)
     
@@ -1910,7 +2172,7 @@ def mark_task_for_review(request, task_id):
 @require_http_methods(['POST'])
 def approve_task(request, task_id):
     task = get_object_or_404(Task, id=task_id)
-    
+
     # Ensure only staff members can approve tasks
     if not request.user.is_staff:
         return JsonResponse({'success': False, 'error': 'Only staff members can approve tasks'}, status=403)
@@ -1987,128 +2249,157 @@ def delete_task(request, task_id):
 @login_required
 @require_http_methods(['GET'])
 def get_vitals_data(request, patient_id):
-    """Get vital signs data for the patient over a specified period."""
+    """Get vital signs data for the patient over a specified period with enhanced accuracy and visualization."""
     try:
         patient = get_object_or_404(Patient, id=patient_id)
         period = request.GET.get('period', 'week')
         
-        # Calculate date range
+        # Calculate date range with more granular options
         end_date = timezone.now()
-        if period == 'week':
+        if period == 'day':
+            start_date = end_date - timedelta(days=1)
+            date_format = '%H:%M'
+        elif period == 'week':
             start_date = end_date - timedelta(days=7)
-        else:  # month
+            date_format = '%m-%d'
+        elif period == 'month':
             start_date = end_date - timedelta(days=30)
+            date_format = '%m-%d'
+        else:  # year
+            start_date = end_date - timedelta(days=365)
+            date_format = '%Y-%m'
         
-        # Get health logs for the period
+        # Get health logs with efficient querying
         health_logs = HealthLog.objects.filter(
             patient=patient,
             timestamp__range=(start_date, end_date)
-        ).order_by('timestamp')
+        ).order_by('timestamp').select_related()
         
-        # Prepare data for chart
-        labels = []
-        bp_data = []
-        temp_data = []
+        # Prepare data for professional visualization
+        data = {
+            'labels': [],
+            'blood_pressure': {
+                'systolic': [],
+                'diastolic': [],
+                'unit': 'mmHg'
+            },
+            'temperature': {
+                'values': [],
+                'unit': '°C'
+            },
+            'pulse_rate': {
+                'values': [],
+                'unit': 'bpm'
+            },
+            'oxygen_level': {
+                'values': [],
+                'unit': '%'
+            },
+            'stats': {
+                'bp_min': None,
+                'bp_max': None,
+                'temp_min': None,
+                'temp_max': None,
+                'pulse_min': None,
+                'pulse_max': None,
+                'oxygen_min': None,
+                'oxygen_max': None
+            }
+        }
         
         for log in health_logs:
-            labels.append(log.timestamp.strftime('%Y-%m-%d %H:%M'))
+            # Format timestamp based on period
+            data['labels'].append(log.timestamp.strftime(date_format))
             
-            # Process blood pressure (assuming format like "120/80")
+            # Process blood pressure with proper error handling
             if log.blood_pressure:
                 try:
-                    systolic = int(log.blood_pressure.split('/')[0])
-                    bp_data.append(systolic)
+                    systolic, diastolic = map(int, log.blood_pressure.split('/'))
+                    data['blood_pressure']['systolic'].append(systolic)
+                    data['blood_pressure']['diastolic'].append(diastolic)
+                    
+                    # Update BP stats
+                    if data['stats']['bp_min'] is None or systolic < data['stats']['bp_min']:
+                        data['stats']['bp_min'] = systolic
+                    if data['stats']['bp_max'] is None or systolic > data['stats']['bp_max']:
+                        data['stats']['bp_max'] = systolic
                 except (ValueError, IndexError):
-                    bp_data.append(None)
+                    data['blood_pressure']['systolic'].append(None)
+                    data['blood_pressure']['diastolic'].append(None)
             else:
-                bp_data.append(None)
+                data['blood_pressure']['systolic'].append(None)
+                data['blood_pressure']['diastolic'].append(None)
             
-            # Process temperature
-            temp_data.append(float(log.temperature) if log.temperature else None)
+            # Process temperature with proper formatting
+            if log.temperature:
+                temp = float(log.temperature)
+                data['temperature']['values'].append(round(temp, 1))
+                if data['stats']['temp_min'] is None or temp < data['stats']['temp_min']:
+                    data['stats']['temp_min'] = temp
+                if data['stats']['temp_max'] is None or temp > data['stats']['temp_max']:
+                    data['stats']['temp_max'] = temp
+            else:
+                data['temperature']['values'].append(None)
+            
+            # Process pulse rate
+            if log.pulse_rate:
+                pulse = int(log.pulse_rate)
+                data['pulse_rate']['values'].append(pulse)
+                if data['stats']['pulse_min'] is None or pulse < data['stats']['pulse_min']:
+                    data['stats']['pulse_min'] = pulse
+                if data['stats']['pulse_max'] is None or pulse > data['stats']['pulse_max']:
+                    data['stats']['pulse_max'] = pulse
+            else:
+                data['pulse_rate']['values'].append(None)
+            
+            # Process oxygen level
+            if log.oxygen_level:
+                oxygen = int(log.oxygen_level)
+                data['oxygen_level']['values'].append(oxygen)
+                if data['stats']['oxygen_min'] is None or oxygen < data['stats']['oxygen_min']:
+                    data['stats']['oxygen_min'] = oxygen
+                if data['stats']['oxygen_max'] is None or oxygen > data['stats']['oxygen_max']:
+                    data['stats']['oxygen_max'] = oxygen
+            else:
+                data['oxygen_level']['values'].append(None)
+        
+        # Add metadata
+        data['metadata'] = {
+            'period': period,
+            'start_date': start_date.strftime('%Y-%m-%d %H:%M'),
+            'end_date': end_date.strftime('%Y-%m-%d %H:%M'),
+            'total_readings': len(health_logs)
+        }
+        
+        # Add reference ranges for vital signs
+        data['reference_ranges'] = {
+            'blood_pressure': {
+                'normal': {'systolic': {'min': 90, 'max': 120}, 'diastolic': {'min': 60, 'max': 80}},
+                'unit': 'mmHg'
+            },
+            'temperature': {
+                'normal': {'min': 36.1, 'max': 37.2},
+                'unit': '°C'
+            },
+            'pulse_rate': {
+                'normal': {'min': 60, 'max': 100},
+                'unit': 'bpm'
+            },
+            'oxygen_level': {
+                'normal': {'min': 95, 'max': 100},
+                'unit': '%'
+            }
+        }
         
         return JsonResponse({
             'success': True,
-            'labels': labels,
-            'bp_data': bp_data,
-            'temp_data': temp_data
+            'data': data
         })
     except Exception as e:
         return JsonResponse({
             'success': False,
             'error': str(e)
-        })
-
-@login_required
-@require_http_methods(['POST'])
-def add_medication(request, patient_id):
-    """Add a new medication for the patient."""
-    try:
-        patient = get_object_or_404(Patient, id=patient_id)
-        
-        # Create new medication
-        medication = Medication.objects.create(
-            patient=patient,
-            name=request.POST['name'],
-            dosage=request.POST['dosage'],
-            frequency=request.POST['frequency'],
-            start_date=request.POST['start_date'],
-            created_by=request.user
-        )
-        
-        # Create medication schedule based on frequency
-        if medication.frequency == 'daily':
-            MedicationSchedule.objects.create(
-                medication=medication,
-                scheduled_time=datetime.strptime('09:00', '%H:%M').time(),
-                dosage_amount=medication.dosage
-            )
-        elif medication.frequency == 'twice_daily':
-            MedicationSchedule.objects.create(
-                medication=medication,
-                scheduled_time=datetime.strptime('09:00', '%H:%M').time(),
-                dosage_amount=medication.dosage
-            )
-            MedicationSchedule.objects.create(
-                medication=medication,
-                scheduled_time=datetime.strptime('21:00', '%H:%M').time(),
-                dosage_amount=medication.dosage
-            )
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'Medication added successfully'
-        })
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        })
-
-@login_required
-@require_http_methods(['POST'])
-def mark_medication_taken(request):
-    """Mark a medication as taken."""
-    try:
-        data = json.loads(request.body)
-        medication_id = data.get('medication_id')
-        medication = get_object_or_404(Medication, id=medication_id)
-        
-        # Create medication log
-        MedicationLog.objects.create(
-            medication=medication,
-            status='TAKEN',
-            taken_at=timezone.now()
-        )
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'Medication marked as taken'
-        })
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        })
+        }, status=400)
 
 @login_required
 @require_http_methods(['GET'])
@@ -2164,7 +2455,7 @@ def get_health_metrics(request, patient_id):
         return JsonResponse({
             'success': False,
             'error': str(e)
-        })
+        }, status=400)
 
 @login_required
 @require_http_methods(['GET'])
@@ -2215,7 +2506,7 @@ def get_recent_activities(request, patient_id):
         return JsonResponse({
             'success': False,
             'error': str(e)
-        })
+        }, status=400)
 
 @login_required
 @require_http_methods(['POST'])
@@ -2268,3 +2559,505 @@ class VerifyEmailView(View):
         except (TypeError, ValueError, OverflowError, User.DoesNotExist):
             messages.error(request, 'The verification link is invalid or has expired.')
             return redirect('login')
+
+@login_required
+@require_http_methods(['POST'])
+def send_message(request):
+    if request.method == 'POST':
+        receiver_id = request.POST.get('receiver_id')
+        patient_id = request.POST.get('patient_id')
+        message_text = request.POST.get('message', '')  # Make message optional
+        attachment = request.FILES.get('attachment')
+        
+        if not receiver_id or not patient_id:  # Only check for required fields
+            messages.error(request, 'Missing required information')
+            return redirect('carelink:messages_list')
+        
+        # Require either message or attachment
+        if not message_text and not attachment:
+            messages.error(request, 'Please provide either a message or an attachment')
+            return redirect('carelink:messages_list')
+        
+        try:
+            receiver = User.objects.get(id=receiver_id)
+            patient = Patient.objects.get(id=patient_id)
+            
+            # Verify that both users are related to this patient
+            is_valid = False
+            if request.user.user_type == 'CAREGIVER':
+                is_valid = (patient.assigned_caregiver == request.user and 
+                          patient.family_members.filter(id=receiver.id).exists())
+            else:  # FAMILY
+                is_valid = (patient.family_members.filter(id=request.user.id).exists() and 
+                          patient.assigned_caregiver == receiver)
+            
+            if not is_valid:
+                messages.error(request, 'Invalid message recipient')
+                return redirect('carelink:messages_list')
+            
+            # Create the message
+            message = Communication.objects.create(
+                sender=request.user,
+                receiver=receiver,
+                patient=patient,
+                message=message_text or '(Attachment)'  # Use placeholder if no message
+            )
+            
+            # Handle attachment if present
+            if attachment:
+                file_ext = attachment.name.split('.')[-1].lower()
+                if file_ext in ['jpg', 'jpeg', 'png', 'gif']:
+                    attachment_type = 'image'
+                elif file_ext in ['doc', 'docx', 'pdf']:
+                    attachment_type = 'document'
+                elif file_ext in ['mp3', 'wav']:
+                    attachment_type = 'audio'
+                else:
+                    attachment_type = 'other'
+                
+                message.attachment = attachment
+                message.attachment_type = attachment_type
+                message.attachment_name = attachment.name
+                message.save()
+            
+            # Return JSON response for AJAX requests
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'status': 'success'})
+            
+            messages.success(request, 'Message sent successfully')
+            return redirect('carelink:conversation', user_id=receiver_id, patient_id=patient_id)
+            
+        except (User.DoesNotExist, Patient.DoesNotExist):
+            messages.error(request, 'Invalid user or patient')
+            return redirect('carelink:messages_list')
+    
+class ConversationView(LoginRequiredMixin, ListView):
+    model = Communication
+    template_name = 'carelink/conversation.html'
+    context_object_name = 'messages'
+    
+    def get_queryset(self):
+        user_id = self.kwargs.get('user_id')
+        patient_id = self.kwargs.get('patient_id')
+        
+        # Get all messages between these users for this patient
+        return Communication.objects.filter(
+            Q(sender=self.request.user, receiver_id=user_id, patient_id=patient_id) |
+            Q(sender_id=user_id, receiver=self.request.user, patient_id=patient_id)
+        ).order_by('timestamp')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['other_user'] = User.objects.get(id=self.kwargs.get('user_id'))
+        context['patient'] = Patient.objects.get(id=self.kwargs.get('patient_id'))
+        return context
+
+class MessagesListView(LoginRequiredMixin, ListView):
+    model = Communication
+    template_name = 'carelink/messages_list.html'
+    context_object_name = 'conversations'
+
+    def get_queryset(self):
+        user = self.request.user
+        
+        # Get all conversations where the user is either sender or receiver
+        conversations = Communication.objects.filter(
+            Q(sender=user) | Q(receiver=user)
+        ).values(
+            'sender', 'receiver', 'patient'
+        ).annotate(
+            last_message=Max('timestamp'),
+            message_count=Count('id'),
+            unread_count=Count('id', filter=Q(receiver=user, is_read=False))
+        ).order_by('-last_message')
+        
+        # Enhance the queryset with user and patient details
+        enhanced_conversations = []
+        for conv in conversations:
+            other_user_id = conv['receiver'] if conv['sender'] == user.id else conv['sender']
+            other_user = User.objects.get(id=other_user_id)
+            patient = Patient.objects.get(id=conv['patient'])
+            
+            # Get the latest message
+            latest_message = Communication.objects.filter(
+                Q(sender=user, receiver_id=other_user_id, patient_id=conv['patient']) |
+                Q(receiver=user, sender_id=other_user_id, patient_id=conv['patient'])
+            ).latest('timestamp')
+            
+            enhanced_conversations.append({
+                'other_user': other_user,
+                'patient': patient,
+                'last_message': latest_message,
+                'message_count': conv['message_count'],
+                'unread_count': conv['unread_count']
+            })
+        
+        return enhanced_conversations
+
+@login_required
+@require_http_methods(['POST'])
+def mark_message_read(request, message_id):
+    """Mark a message as read and update its read timestamp."""
+    try:
+        message = Communication.objects.get(id=message_id, receiver=request.user)
+        if not message.is_read:
+            message.mark_as_read()
+        return JsonResponse({'status': 'success'})
+    except Communication.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Message not found'}, status=404)
+
+@login_required
+def download_attachment(request, message_id):
+    """Download a message attachment with proper security checks."""
+    try:
+        message = Communication.objects.get(
+            Q(sender=request.user) | Q(receiver=request.user),
+            id=message_id
+        )
+        
+        if not message.attachment:
+            raise Http404("No attachment found")
+        
+        # Mark message as read if receiver is downloading
+        if message.receiver == request.user and not message.is_read:
+            message.mark_as_read()
+        
+        # Get the file path and content type
+        file_path = message.attachment.path
+        content_type = None
+        
+        # Set content type based on attachment type
+        if message.attachment_type == 'image':
+            content_type = 'image/jpeg'  # Adjust based on actual image type
+        elif message.attachment_type == 'document':
+            if message.attachment_name.endswith('.pdf'):
+                content_type = 'application/pdf'
+            elif message.attachment_name.endswith('.doc'):
+                content_type = 'application/msword'
+            elif message.attachment_name.endswith('.docx'):
+                content_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        elif message.attachment_type == 'audio':
+            content_type = 'audio/mpeg'
+        
+        if not content_type:
+            content_type = 'application/octet-stream'
+        
+        # Open the file and create the response
+        with open(file_path, 'rb') as f:
+            response = FileResponse(f, content_type=content_type)
+            response['Content-Disposition'] = f'attachment; filename="{message.attachment_name}"'
+            return response
+        
+    except Communication.DoesNotExist:
+        raise Http404("Message not found")
+    except FileNotFoundError:
+        raise Http404("Attachment file not found")
+
+@login_required
+@require_http_methods(['POST'])
+def add_medication(request, patient_id):
+    """Add a new medication for the patient."""
+    try:
+        patient = get_object_or_404(Patient, id=patient_id)
+        
+        # Create new medication
+        medication = Medication.objects.create(
+            patient=patient,
+            name=request.POST['name'],
+            dosage=request.POST['dosage'],
+            frequency=request.POST['frequency'],
+            start_date=request.POST['start_date'],
+            created_by=request.user
+        )
+        
+        # Create medication schedule based on frequency
+        if medication.frequency == 'daily':
+            MedicationSchedule.objects.create(
+                medication=medication,
+                scheduled_time=datetime.strptime('09:00', '%H:%M').time(),
+                dosage_amount=medication.dosage
+            )
+        elif medication.frequency == 'twice_daily':
+            MedicationSchedule.objects.create(
+                medication=medication,
+                scheduled_time=datetime.strptime('09:00', '%H:%M').time(),
+                dosage_amount=medication.dosage
+            )
+            MedicationSchedule.objects.create(
+                medication=medication,
+                scheduled_time=datetime.strptime('21:00', '%H:%M').time(),
+                dosage_amount=medication.dosage
+            )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Medication added successfully'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=400)
+
+@login_required
+@require_http_methods(['POST'])
+def mark_medication_taken(request):
+    """Mark a medication as taken."""
+    try:
+        data = json.loads(request.body)
+        medication_id = data.get('medication_id')
+        medication = get_object_or_404(Medication, id=medication_id)
+        
+        # Create medication log
+        MedicationLog.objects.create(
+            medication=medication,
+            status='TAKEN',
+            taken_at=timezone.now()
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Medication marked as taken'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=400)
+
+@login_required
+@require_http_methods(['POST'])
+def update_medication_status(request, medication_id):
+    try:
+        # Get the medication
+        medication = Medication.objects.get(id=medication_id)
+        
+        # Check if user is authorized (must be the assigned caregiver)
+        if request.user != medication.patient.assigned_caregiver:
+            return JsonResponse({
+                'success': False,
+                'error': 'You are not authorized to update this medication'
+            }, status=403)
+        
+        # Parse the request body
+        data = json.loads(request.body)
+        new_status = data.get('status')
+        
+        # Validate the status
+        if new_status not in dict(Medication.STATUS_CHOICES):
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid status'
+            }, status=400)
+        
+        # Update the status
+        medication.status = new_status
+        if new_status in ['COMPLETED', 'DISCONTINUED']:
+            medication.end_date = timezone.now().date()
+        medication.save()
+        
+        # Return success response with updated status display
+        return JsonResponse({
+            'success': True,
+            'status_display': medication.get_status_display()
+        })
+        
+    except Medication.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Medication not found'
+        }, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid request format'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+@login_required
+@require_http_methods(["POST"])
+def report_issue(request):
+    try:
+        data = json.loads(request.body)
+        
+        # Get required fields
+        patient_id = data.get('patient_id')
+        issue_type = data.get('issue_type')
+        priority = data.get('priority')
+        description = data.get('description')
+        
+        # Validate required fields
+        if not all([patient_id, issue_type, priority, description]):
+            return JsonResponse({
+                'success': False,
+                'error': 'All fields are required'
+            }, status=400)
+            
+        # Get patient
+        try:
+            patient = Patient.objects.get(id=patient_id)
+        except Patient.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'Patient not found'
+            }, status=404)
+            
+        # Check if user is authorized (must be a family member of the patient)
+        if request.user not in patient.family_members.all():
+            return JsonResponse({
+                'success': False,
+                'error': 'You are not authorized to report issues for this patient'
+            }, status=403)
+            
+        # Create issue report
+        issue = IssueReport.objects.create(
+            patient=patient,
+            reported_by=request.user,
+            issue_type=issue_type,
+            priority=priority,
+            description=description
+        )
+        
+        # Send notification to admin and assigned caregiver
+        if patient.assigned_caregiver:
+            Notification.objects.create(
+                user=patient.assigned_caregiver,
+                type='SYSTEM',
+                title='New Issue Report',
+                message=f'A new issue has been reported for {patient.first_name} {patient.last_name}.'
+            )
+            
+        # Get admin users
+        admin_users = User.objects.filter(user_type='ADMIN')
+        for admin in admin_users:
+            Notification.objects.create(
+                user=admin,
+                type='SYSTEM',
+                title='New Issue Report',
+                message=f'A new {priority} priority issue has been reported by {request.user.get_full_name()}'
+            )
+            
+        return JsonResponse({
+            'success': True,
+            'message': 'Issue reported successfully'
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid request format'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+@login_required
+def issue_management(request):
+    if request.user.user_type == 'ADMIN':
+        issues = IssueReport.objects.all()
+    elif request.user.user_type == 'CAREGIVER':
+        issues = IssueReport.objects.filter(patient__assigned_caregiver=request.user)
+    else:
+        return HttpResponseForbidden("Access denied")
+        
+    context = {'issues': issues.order_by('-created_at')}
+    return render(request, 'carelink/issue_management.html', context)
+
+@login_required
+def issue_detail(request):
+    issue_id = request.GET.get('issue_id')
+    try:
+        issue = IssueReport.objects.get(id=issue_id)
+        
+        if request.user.user_type != 'ADMIN' and issue.patient.assigned_caregiver != request.user:
+            return JsonResponse({
+                'success': False,
+                'error': 'You are not authorized to view this issue'
+            }, status=403)
+            
+        html = render_to_string('carelink/issue_detail_partial.html', {
+            'issue': issue
+        })
+        
+        return JsonResponse({
+            'success': True,
+            'html': html
+        })
+        
+    except IssueReport.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Issue not found'
+        }, status=404)
+
+@login_required
+@require_http_methods(["POST"])
+def respond_to_issue(request):
+    try:
+        data = json.loads(request.body)
+        issue_id = data.get('issue_id')
+        status = data.get('status')
+        response = data.get('response')
+        
+        if not all([issue_id, status, response]):
+            return JsonResponse({
+                'success': False,
+                'error': 'All fields are required'
+            }, status=400)
+            
+        try:
+            issue = IssueReport.objects.get(id=issue_id)
+        except IssueReport.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'Issue not found'
+            }, status=404)
+            
+        if request.user.user_type != 'ADMIN' and issue.patient.assigned_caregiver != request.user:
+            return JsonResponse({
+                'success': False,
+                'error': 'You are not authorized to respond to this issue'
+            }, status=403)
+            
+        issue.status = status
+        if status == 'RESOLVED':
+            issue.resolved_by = request.user
+            issue.resolved_at = timezone.now()
+            issue.resolution_notes = response
+        else:
+            IssueResponse.objects.create(
+                issue=issue,
+                responder=request.user,
+                response=response
+            )
+            
+        issue.save()
+        
+        Notification.objects.create(
+            user=issue.reported_by,
+            type='SYSTEM',
+            title='Issue Update',
+            message=f'Your reported issue has been updated to {issue.get_status_display()}'
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Response submitted successfully'
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid request format'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)

@@ -1,138 +1,353 @@
 <!-- templates/carelink/notifications.html -->
 {% extends 'carelink/base.html' %}
+{% load static %}
 
 {% block title %}Notifications - CareLink{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <div class="row mb-4">
+<div class="container py-4">
+    <div class="row">
         <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5 class="mb-0 text-primary">
-                            <i class="fas fa-bell me-2"></i>Notifications
-                        </h5>
-                        <p class="text-muted mb-0 mt-1">Stay updated with your latest alerts and updates</p>
-                    </div>
-                    {% if notifications %}
-                    <button class="btn btn-outline-secondary btn-sm" id="markAllRead">
-                        <i class="fas fa-check-double me-1"></i>Mark All as Read
-                    </button>
-                    {% endif %}
+            <!-- Notifications Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-2">
+                        <i class="fas fa-bell me-2 text-primary"></i>
+                        Notifications
+                    </h1>
+                    <p class="text-muted mb-0">Stay updated with your latest alerts and updates</p>
                 </div>
-                <div class="card-body">
-                    {% for notification in notifications %}
-                    <div class="card mb-3 border-0 shadow-sm notification-card {% if not notification.is_read %}border-start border-4 border-primary{% endif %}" 
-                         data-notification-id="{{ notification.id }}">
+                {% if notifications %}
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-secondary" id="markAllRead">
+                            <i class="fas fa-check-double me-2"></i>
+                            Mark All as Read
+                        </button>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-filter me-2"></i>
+                                Filter
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item active" href="#" data-filter="all">All Notifications</a></li>
+                                <li><a class="dropdown-item" href="#" data-filter="unread">Unread Only</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#" data-filter="TASK">Tasks</a></li>
+                                <li><a class="dropdown-item" href="#" data-filter="HEALTH">Health Updates</a></li>
+                                <li><a class="dropdown-item" href="#" data-filter="MESSAGE">Messages</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Alert Container -->
+            <div id="alertContainer"></div>
+
+            <!-- Notifications List -->
+            <div class="notifications-list">
+                {% for notification in notifications %}
+                    <div class="card mb-3 shadow-sm notification-card hover-shadow {% if not notification.is_read %}unread border-start border-4 border-primary{% endif %}" 
+                         data-notification-id="{{ notification.id }}"
+                         data-notification-type="{{ notification.type }}">
                         <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div class="notification-content">
-                                    <div class="d-flex align-items-center mb-2">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <div class="notification-icon rounded-circle p-3 
+                                        {% if notification.type == 'TASK' %}bg-primary text-white
+                                        {% elif notification.type == 'HEALTH' %}bg-danger text-white
+                                        {% elif notification.type == 'MESSAGE' %}bg-success text-white
+                                        {% else %}bg-info text-white{% endif %}">
                                         {% if notification.type == 'TASK' %}
-                                            <i class="fas fa-tasks text-primary me-2"></i>
+                                            <i class="fas fa-tasks"></i>
                                         {% elif notification.type == 'HEALTH' %}
-                                            <i class="fas fa-heartbeat text-danger me-2"></i>
+                                            <i class="fas fa-heartbeat"></i>
                                         {% elif notification.type == 'MESSAGE' %}
-                                            <i class="fas fa-envelope text-success me-2"></i>
+                                            <i class="fas fa-envelope"></i>
                                         {% else %}
-                                            <i class="fas fa-info-circle text-info me-2"></i>
+                                            <i class="fas fa-info-circle"></i>
                                         {% endif %}
-                                        <h6 class="mb-0 {% if not notification.is_read %}fw-bold{% endif %}">
-                                            {{ notification.title }}
-                                        </h6>
                                     </div>
-                                    <p class="mb-2 text-muted">{{ notification.message }}</p>
-                                    <small class="text-muted">
-                                        <i class="fas fa-clock me-1"></i>{{ notification.created_at|timesince }} ago
-                                    </small>
                                 </div>
-                                {% if not notification.is_read %}
-                                <span class="badge bg-primary rounded-pill">New</span>
-                                {% endif %}
+                                <div class="col">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1 {% if not notification.is_read %}fw-bold{% endif %}">
+                                                {{ notification.title }}
+                                            </h6>
+                                            <p class="mb-1 text-muted">{{ notification.message }}</p>
+                                            <small class="text-muted d-flex align-items-center">
+                                                <i class="fas fa-clock me-1"></i>
+                                                {{ notification.created_at|timesince }} ago
+                                                {% if notification.is_read %}
+                                                    <span class="ms-2 text-success">
+                                                        <i class="fas fa-check me-1"></i>Read
+                                                    </span>
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                        {% if not notification.is_read %}
+                                            <button class="btn btn-sm btn-outline-primary mark-read-btn">
+                                                <i class="fas fa-check me-1"></i>
+                                                Mark as Read
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    {% empty %}
-                    <div class="text-center py-5">
+                {% empty %}
+                    <div class="text-center py-5 bg-light rounded">
                         <i class="fas fa-bell-slash text-muted fa-3x mb-3"></i>
-                        <p class="text-muted mb-0">No notifications to display.</p>
+                        <h3 class="h5 text-muted">No Notifications</h3>
+                        <p class="text-muted mb-0">You're all caught up!</p>
                     </div>
-                    {% endfor %}
-                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Detail Modal -->
+<div class="modal fade" id="notificationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Notification Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="notificationDetails"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
 
-{% block javascript %}
+{% block extra_css %}
+<style>
+.notification-card {
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+}
+
+.hover-shadow:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.notification-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.notification-card.unread {
+    background-color: rgba(13, 110, 253, 0.02);
+}
+
+.alert {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
 <script>
-$(document).ready(function() {
-    // Mark all notifications as read
-    $('#markAllRead').click(function() {
-        $.ajax({
-            url: "{% url 'carelink:mark_all_notifications_read' %}",
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            success: function(response) {
-                if (response.success) {
-                    // Remove all unread indicators
-                    $('.notification-card').removeClass('border-start border-4 border-primary');
-                    $('.notification-card .badge').remove();
-                    $('.notification-content h6').removeClass('fw-bold');
-                    // Hide the mark all as read button
-                    $('#markAllRead').fadeOut();
-                    // Show success message
-                    const alert = $('<div class="alert alert-success alert-dismissible fade show" role="alert">')
-                        .text('All notifications marked as read')
-                        .append('<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>');
-                    $('.card-header').after(alert);
+document.addEventListener('DOMContentLoaded', function() {
+    const alertContainer = document.getElementById('alertContainer');
+    
+    function showAlert(message, type = 'success') {
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type} alert-dismissible fade show`;
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        alertContainer.appendChild(alert);
+        
+        // Auto dismiss after 3 seconds
+        setTimeout(() => {
+            alert.classList.remove('show');
+            setTimeout(() => alert.remove(), 300);
+        }, 3000);
+    }
+
+    // Mark single notification as read
+    document.querySelectorAll('.mark-read-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const card = this.closest('.notification-card');
+            const notificationId = card.dataset.notificationId;
+            
+            fetch(`/notifications/${notificationId}/mark-read/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
                 }
-            },
-            error: function(xhr) {
-                const alert = $('<div class="alert alert-danger alert-dismissible fade show" role="alert">')
-                    .text('Error marking notifications as read. Please try again.')
-                    .append('<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>');
-                $('.card-header').after(alert);
-            }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    card.classList.remove('unread', 'border-start', 'border-4', 'border-primary');
+                    this.remove();
+                    showAlert('Notification marked as read');
+                    
+                    // Update notification content
+                    const title = card.querySelector('h6');
+                    title.classList.remove('fw-bold');
+                    
+                    // Add read indicator
+                    const timeInfo = card.querySelector('small');
+                    if (!timeInfo.querySelector('.text-success')) {
+                        timeInfo.insertAdjacentHTML('beforeend', `
+                            <span class="ms-2 text-success">
+                                <i class="fas fa-check me-1"></i>Read
+                            </span>
+                        `);
+                    }
+                    
+                    // Hide mark all read button if no unread notifications
+                    if (!document.querySelector('.notification-card.unread')) {
+                        document.getElementById('markAllRead')?.closest('.d-flex')?.remove();
+                    }
+                }
+            })
+            .catch(() => {
+                showAlert('Error marking notification as read', 'danger');
+            });
         });
     });
 
-    // Individual notification click handler
-    $('.notification-card').click(function() {
-        const card = $(this);
-        const notificationId = card.data('notification-id');
-        
-        if (card.hasClass('border-primary')) {
-            $.ajax({
-                url: "{% url 'carelink:mark_notification_read' 0 %}".replace('0', notificationId),
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                success: function(response) {
-                    if (response.success) {
-                        card.removeClass('border-start border-4 border-primary');
-                        card.find('.badge').remove();
-                        card.find('.notification-content h6').removeClass('fw-bold');
-                        
-                        // Check if there are any remaining unread notifications
-                        if ($('.notification-card.border-primary').length === 0) {
-                            $('#markAllRead').fadeOut();
-                        }
+    // Mark all as read
+    document.getElementById('markAllRead')?.addEventListener('click', function() {
+        fetch("{% url 'carelink:mark_all_notifications_read' %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.querySelectorAll('.notification-card.unread').forEach(card => {
+                    card.classList.remove('unread', 'border-start', 'border-4', 'border-primary');
+                    card.querySelector('.mark-read-btn')?.remove();
+                    card.querySelector('h6').classList.remove('fw-bold');
+                    
+                    const timeInfo = card.querySelector('small');
+                    if (!timeInfo.querySelector('.text-success')) {
+                        timeInfo.insertAdjacentHTML('beforeend', `
+                            <span class="ms-2 text-success">
+                                <i class="fas fa-check me-1"></i>Read
+                            </span>
+                        `);
                     }
-                },
-                error: function(xhr) {
-                    const alert = $('<div class="alert alert-danger alert-dismissible fade show" role="alert">')
-                        .text('Error marking notification as read. Please try again.')
-                        .append('<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>');
-                    $('.card-header').after(alert);
+                });
+                
+                this.closest('.d-flex').remove();
+                showAlert('All notifications marked as read');
+            }
+        })
+        .catch(() => {
+            showAlert('Error marking all notifications as read', 'danger');
+        });
+    });
+
+    // Filter notifications
+    document.querySelectorAll('.dropdown-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            const filter = this.dataset.filter;
+            
+            // Update active state
+            document.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Filter notifications
+            document.querySelectorAll('.notification-card').forEach(card => {
+                if (filter === 'all') {
+                    card.style.display = '';
+                } else if (filter === 'unread') {
+                    card.style.display = card.classList.contains('unread') ? '' : 'none';
+                } else {
+                    card.style.display = card.dataset.notificationType === filter ? '' : 'none';
                 }
             });
-        }
+        });
+    });
+
+    // Show notification details in modal
+    document.querySelectorAll('.notification-card').forEach(card => {
+        card.addEventListener('click', function(e) {
+            if (!e.target.closest('.mark-read-btn')) {
+                const title = this.querySelector('h6').textContent.trim();
+                const message = this.querySelector('p').textContent.trim();
+                const time = this.querySelector('small').textContent.trim();
+                const type = this.dataset.notificationType;
+                
+                let typeText = '';
+                let typeClass = '';
+                
+                switch(type) {
+                    case 'TASK':
+                        typeText = 'Task Update';
+                        typeClass = 'text-primary';
+                        break;
+                    case 'HEALTH':
+                        typeText = 'Health Alert';
+                        typeClass = 'text-danger';
+                        break;
+                    case 'MESSAGE':
+                        typeText = 'New Message';
+                        typeClass = 'text-success';
+                        break;
+                    default:
+                        typeText = 'Information';
+                        typeClass = 'text-info';
+                }
+                
+                document.getElementById('notificationDetails').innerHTML = `
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-2">Notification Type</small>
+                        <span class="badge ${typeClass} bg-opacity-10 ${typeClass}">${typeText}</span>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-2">Title</small>
+                        <h6 class="mb-0">${title}</h6>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-2">Message</small>
+                        <p class="mb-0">${message}</p>
+                    </div>
+                    <div>
+                        <small class="text-muted d-block mb-2">Time</small>
+                        <p class="mb-0"><i class="fas fa-clock me-1"></i>${time}</p>
+                    </div>
+                `;
+                
+                new bootstrap.Modal(document.getElementById('notificationModal')).show();
+            }
+        });
     });
 });
 </script>

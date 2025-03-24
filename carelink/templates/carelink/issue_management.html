@@ -1,0 +1,223 @@
+{% extends 'carelink/base.html' %}
+{% load static %}
+
+{% block title %}Issue Management - CareLink{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Issue Management</h4>
+                    <div class="btn-group mt-2">
+                        <button type="button" class="btn btn-outline-primary active" data-filter="all">All</button>
+                        <button type="button" class="btn btn-outline-primary" data-filter="OPEN">Open</button>
+                        <button type="button" class="btn btn-outline-primary" data-filter="IN_PROGRESS">In Progress</button>
+                        <button type="button" class="btn btn-outline-primary" data-filter="RESOLVED">Resolved</button>
+                        <button type="button" class="btn btn-outline-primary" data-filter="CLOSED">Closed</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Patient</th>
+                                    <th>Type</th>
+                                    <th>Priority</th>
+                                    <th>Status</th>
+                                    <th>Reported By</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for issue in issues %}
+                                <tr class="issue-row" data-status="{{ issue.status }}">
+                                    <td>#{{ issue.id }}</td>
+                                    <td>{{ issue.patient.get_full_name }}</td>
+                                    <td>
+                                        <span class="badge bg-info">{{ issue.get_issue_type_display }}</span>
+                                    </td>
+                                    <td>
+                                        {% if issue.priority == 'URGENT' %}
+                                            <span class="badge bg-danger">Urgent</span>
+                                        {% elif issue.priority == 'HIGH' %}
+                                            <span class="badge bg-warning">High</span>
+                                        {% elif issue.priority == 'MEDIUM' %}
+                                            <span class="badge bg-primary">Medium</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Low</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if issue.status == 'OPEN' %}
+                                            <span class="badge bg-danger">Open</span>
+                                        {% elif issue.status == 'IN_PROGRESS' %}
+                                            <span class="badge bg-warning">In Progress</span>
+                                        {% elif issue.status == 'RESOLVED' %}
+                                            <span class="badge bg-success">Resolved</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Closed</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ issue.reported_by.get_full_name }}</td>
+                                    <td>{{ issue.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-primary" 
+                                                onclick="viewIssue({{ issue.id }}); return false;"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#issueDetailModal">
+                                            View
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Issue Detail Modal -->
+<div class="modal fade" id="issueDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Issue Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="issueDetails">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+                <hr>
+                <form id="responseForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="issueId" name="issue_id">
+                    <div class="mb-3">
+                        <label for="statusUpdate" class="form-label">Update Status</label>
+                        <select class="form-select" id="statusUpdate" name="status" required>
+                            <option value="">Select Status</option>
+                            <option value="IN_PROGRESS">Mark In Progress</option>
+                            <option value="RESOLVED">Mark as Resolved</option>
+                            <option value="CLOSED">Close Issue</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="responseText" class="form-label">Response</label>
+                        <textarea class="form-control" id="responseText" name="response" rows="4" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="submitResponse()">Submit Response</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Toast -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div id="successToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                Response submitted successfully!
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Filter issues by status
+document.querySelectorAll('[data-filter]').forEach(button => {
+    button.addEventListener('click', function() {
+        // Update active button
+        document.querySelectorAll('[data-filter]').forEach(btn => btn.classList.remove('active'));
+        this.classList.add('active');
+        
+        // Filter table rows
+        const filter = this.dataset.filter;
+        document.querySelectorAll('.issue-row').forEach(row => {
+            if (filter === 'all' || row.dataset.status === filter) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+});
+
+// View issue details
+function viewIssue(issueId) {
+    document.getElementById('issueId').value = issueId;
+    
+    fetch(`{% url 'carelink:issue_detail' %}?issue_id=${issueId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('issueDetails').innerHTML = data.html;
+            } else {
+                alert('Failed to load issue details');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while loading issue details');
+        });
+}
+
+// Submit response
+function submitResponse() {
+    const form = document.getElementById('responseForm');
+    const formData = new FormData(form);
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    fetch('{% url "carelink:respond_to_issue" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            issue_id: formData.get('issue_id'),
+            status: formData.get('status'),
+            response: formData.get('response')
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('issueDetailModal'));
+            modal.hide();
+            
+            // Show success toast
+            const toast = new bootstrap.Toast(document.getElementById('successToast'));
+            toast.show();
+            
+            // Reset form
+            form.reset();
+            
+            // Reload page after short delay
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            alert(data.error || 'Failed to submit response');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while submitting the response');
+    });
+}
+</script>
+{% endblock %}

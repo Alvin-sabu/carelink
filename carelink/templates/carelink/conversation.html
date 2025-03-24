@@ -1,100 +1,283 @@
 {% extends 'carelink/base.html' %}
+{% load static %}
 
 {% block title %}Conversation with {{ other_user.get_full_name }} - CareLink{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4 py-3">
-    <div class="row">
-        <div class="col-12 mb-4">
+<div class="container py-4">
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 py-3">
             <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h2 class="mb-0">Conversation</h2>
-                    <p class="text-muted mb-0">
-                        {{ other_user.get_full_name }} - Regarding {{ patient.get_full_name }}
-                    </p>
-                </div>
-                <a href="{% url 'carelink:messages' %}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-2"></i>Back to Messages
+                <h5 class="mb-0">
+                    Conversation with {{ other_user.get_full_name }}
+                    <small class="text-muted d-block">Re: {{ patient.get_full_name }}</small>
+                </h5>
+                <a href="{% url 'carelink:messages_list' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Messages
                 </a>
             </div>
         </div>
-        
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <!-- Messages Container -->
-                    <div class="messages-container" style="height: 400px; overflow-y: auto;">
-                        {% for message in messages %}
-                        <div class="message {% if message.sender == request.user %}message-sent{% else %}message-received{% endif %} mb-3">
-                            <div class="message-content p-3 rounded {% if message.sender == request.user %}bg-primary text-white{% else %}bg-light{% endif %}">
-                                {{ message.message }}
-                            </div>
-                            <small class="text-muted d-block mt-1">
-                                {{ message.timestamp|date:"M d, Y H:i" }}
-                            </small>
+        <div class="card-body">
+            <div id="messages-container" class="messages-container mb-4" style="height: 400px; overflow-y: auto;">
+                {% for message in messages %}
+                <div class="message {% if message.sender == request.user %}message-sent{% else %}message-received{% endif %} mb-3" data-message-id="{{ message.id }}">
+                    <div class="message-content p-3 rounded {% if message.sender == request.user %}bg-primary text-white{% else %}bg-light{% endif %}">
+                        <p class="mb-1">{{ message.message }}</p>
+                        {% if message.attachment %}
+                        <div class="attachment-preview mb-2">
+                            {% if message.attachment_type == 'image' %}
+                                <img src="{{ message.attachment.url }}" alt="Attachment" class="img-fluid rounded" style="max-height: 200px;">
+                            {% elif message.attachment_type == 'audio' %}
+                                <audio controls class="w-100">
+                                    <source src="{{ message.attachment.url }}" type="audio/mpeg">
+                                    Your browser does not support the audio element.
+                                </audio>
+                            {% else %}
+                                <a href="{% url 'carelink:download_attachment' message.id %}" class="btn btn-sm {% if message.sender == request.user %}btn-outline-light{% else %}btn-outline-primary{% endif %}">
+                                    <i class="fas {% if message.attachment_type == 'document' %}fa-file-alt{% else %}fa-download{% endif %} me-1"></i>
+                                    Download {{ message.attachment_name }}
+                                </a>
+                            {% endif %}
                         </div>
-                        {% empty %}
-                        <p class="text-center text-muted">No messages yet. Start the conversation!</p>
-                        {% endfor %}
+                        {% endif %}
+                        <small class="{% if message.sender == request.user %}text-white-50{% else %}text-muted{% endif %}">
+                            {{ message.timestamp|date:"M d, Y H:i" }}
+                            {% if message.sender == request.user %}
+                            <i class="fas fa-check{% if message.is_read %}-double{% endif %} ms-1" 
+                               title="{% if message.is_read %}Read at {{ message.read_at|date:'M d, Y H:i' }}{% else %}Sent{% endif %}">
+                            </i>
+                            {% endif %}
+                        </small>
                     </div>
-                    
-                    <!-- Message Form -->
-                    <form method="post" action="{% url 'carelink:send_message' receiver_id=other_user.id %}" class="mt-4">
-                        {% csrf_token %}
-                        <input type="hidden" name="patient_id" value="{{ patient.id }}">
-                        <div class="input-group">
-                            <input type="text" name="message" class="form-control" placeholder="Type your message..." required>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-paper-plane me-2"></i>Send
-                            </button>
-                        </div>
-                    </form>
                 </div>
+                {% endfor %}
             </div>
+            
+            <form id="message-form" method="post" action="{% url 'carelink:send_message' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="receiver_id" value="{{ other_user.id }}">
+                <input type="hidden" name="patient_id" value="{{ patient.id }}">
+                <div class="input-group">
+                    <input type="text" name="message" class="form-control" placeholder="Type your message...">
+                    <label class="input-group-text btn btn-outline-secondary" for="attachment">
+                        <i class="fas fa-paperclip"></i>
+                    </label>
+                    <input type="file" id="attachment" name="attachment" class="d-none" accept="image/*,audio/*,.pdf,.doc,.docx">
+                    <button type="button" class="btn btn-outline-secondary" id="record-voice">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+                <small id="attachment-name" class="text-muted"></small>
+                <div id="recording-controls" class="mt-2 d-none">
+                    <div class="d-flex align-items-center">
+                        <div class="recording-indicator me-2">
+                            <i class="fas fa-circle text-danger"></i>
+                            Recording...
+                        </div>
+                        <button type="button" class="btn btn-sm btn-danger" id="stop-recording">
+                            <i class="fas fa-stop"></i> Stop
+                        </button>
+                    </div>
+                    <audio id="audio-preview" controls class="mt-2 w-100 d-none"></audio>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
-{% block extra_css %}
 <style>
-    .messages-container {
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .message {
-        max-width: 70%;
-    }
-    
-    .message-sent {
-        align-self: flex-end;
-    }
-    
-    .message-received {
-        align-self: flex-start;
-    }
-    
-    .message-content {
-        word-wrap: break-word;
-    }
+.messages-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.message {
+    max-width: 75%;
+    align-self: flex-start;
+}
+
+.message.message-sent {
+    align-self: flex-end;
+}
+
+.message-content {
+    word-break: break-word;
+}
+
+.message.message-sent .message-content {
+    border-radius: 15px 15px 0 15px;
+}
+
+.message.message-received .message-content {
+    border-radius: 15px 15px 15px 0;
+}
+
+.recording-indicator {
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    50% { opacity: 0.5; }
+}
 </style>
-{% endblock %}
 
 {% block extra_js %}
 <script>
-    $(document).ready(function() {
-        // Scroll to bottom of messages container
-        var container = $('.messages-container');
-        container.scrollTop(container[0].scrollHeight);
+    // Scroll to bottom of messages container
+    function scrollToBottom() {
+        const container = document.getElementById('messages-container');
+        container.scrollTop = container.scrollHeight;
+    }
+    
+    // Show selected attachment name
+    document.getElementById('attachment').addEventListener('change', function() {
+        const fileName = this.files[0] ? this.files[0].name : '';
+        document.getElementById('attachment-name').textContent = fileName;
+    });
+    
+    // Voice recording functionality
+    let mediaRecorder;
+    let audioChunks = [];
+    
+    document.getElementById('record-voice').addEventListener('click', async function() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            
+            mediaRecorder.addEventListener('dataavailable', event => {
+                audioChunks.push(event.data);
+            });
+            
+            mediaRecorder.addEventListener('stop', () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/mpeg' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const audio = document.getElementById('audio-preview');
+                audio.src = audioUrl;
+                audio.classList.remove('d-none');
+                
+                // Create a File object from the Blob
+                const file = new File([audioBlob], 'voice-message.mp3', { type: 'audio/mpeg' });
+                const container = new DataTransfer();
+                container.items.add(file);
+                document.getElementById('attachment').files = container.files;
+                document.getElementById('attachment-name').textContent = 'voice-message.mp3';
+                
+                // Stop all tracks to release microphone
+                stream.getTracks().forEach(track => track.stop());
+            });
+            
+            mediaRecorder.start();
+            document.getElementById('recording-controls').classList.remove('d-none');
+            this.disabled = true;
+        } catch (err) {
+            console.error('Error accessing microphone:', err);
+            alert('Could not access microphone. Please check your browser permissions.');
+        }
+    });
+    
+    document.getElementById('stop-recording').addEventListener('click', function() {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+            document.getElementById('record-voice').disabled = false;
+            document.getElementById('recording-controls').classList.add('d-none');
+        }
+    });
+    
+    // Auto scroll on page load
+    scrollToBottom();
+    
+    // Function to update messages silently
+    function updateMessages() {
+        fetch(window.location.href, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newMessages = doc.getElementById('messages-container').innerHTML;
+            const currentMessages = document.getElementById('messages-container').innerHTML;
+            if (newMessages !== currentMessages) {
+                document.getElementById('messages-container').innerHTML = newMessages;
+                scrollToBottom();
+            }
+        })
+        .catch(error => console.error('Error updating messages:', error));
+    }
+    
+    // Handle form submission via AJAX
+    document.getElementById('message-form').addEventListener('submit', function(e) {
+        e.preventDefault();
         
-        // Auto-scroll on new messages
-        var form = $('form');
-        form.on('submit', function() {
-            setTimeout(function() {
-                container.scrollTop(container[0].scrollHeight);
-            }, 100);
+        // Check if we have either message or attachment
+        const messageInput = this.querySelector('[name="message"]');
+        const attachment = document.getElementById('attachment').files[0];
+        
+        if (!messageInput.value && !attachment) {
+            alert('Please provide either a message or an attachment');
+            return;
+        }
+        
+        const formData = new FormData(this);
+        
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Clear form
+                this.reset();
+                document.getElementById('attachment-name').textContent = '';
+                document.getElementById('audio-preview').classList.add('d-none');
+                document.getElementById('audio-preview').src = '';
+                
+                // Update messages immediately
+                updateMessages();
+            }
+        })
+        .catch(error => {
+            console.error('Error sending message:', error);
+            updateMessages(); // Try to update messages anyway
         });
     });
+    
+    // Update messages every 10 seconds silently
+    setInterval(updateMessages, 10000);
+    
+    // Mark messages as read silently
+    function markMessagesAsRead() {
+        const unreadMessages = document.querySelectorAll('.message-received:not(.read)');
+        unreadMessages.forEach(function(messageDiv) {
+            const messageId = messageDiv.dataset.messageId;
+            if (messageId) {
+                fetch(`/carelink/message/${messageId}/mark-read/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(() => messageDiv.classList.add('read'))
+                .catch(error => console.error('Error marking message as read:', error));
+            }
+        });
+    }
+    
+    // Mark messages as read on page load and after updates
+    document.addEventListener('DOMContentLoaded', markMessagesAsRead);
+    setInterval(markMessagesAsRead, 10000);
 </script>
 {% endblock %}
-{% endblock %}
+{% endblock content %}

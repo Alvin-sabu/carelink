@@ -106,6 +106,9 @@ class Patient(models.Model):
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
 
+    def get_full_name(self):
+        return f"{self.first_name} {self.last_name}"
+
     def clean(self):
         if self.assigned_caregiver:
             # Check if this caregiver is already assigned to another patient
@@ -207,6 +210,9 @@ class Task(models.Model):
     completed_at = models.DateTimeField(null=True, blank=True)
     reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_tasks')
 
+    def __str__(self):
+        return self.title
+
     def mark_for_review(self):
         self.status = 'PENDING_REVIEW'
         self.save()
@@ -245,9 +251,24 @@ class Communication(models.Model):
     message = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
-
+    read_at = models.DateTimeField(null=True, blank=True)
+    
+    # New fields for attachments
+    attachment = models.FileField(upload_to='message_attachments/%Y/%m/%d/', null=True, blank=True)
+    attachment_type = models.CharField(max_length=50, null=True, blank=True)
+    attachment_name = models.CharField(max_length=255, null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-timestamp']
+        
     def __str__(self):
-        return f"Message from {self.sender.get_full_name()} to {self.receiver.get_full_name()} (Patient: {self.patient.first_name}): {self.message[:30]}..."
+        return f'Message from {self.sender} to {self.receiver} at {self.timestamp}'
+        
+    def mark_as_read(self):
+        if not self.is_read:
+            self.is_read = True
+            self.read_at = timezone.now()
+            self.save()
 
 class Notification(models.Model):
     TYPE_CHOICES = (
@@ -513,3 +534,69 @@ class MLRecommendation(models.Model):
     
     class Meta:
         ordering = ['-created_at']
+
+class IssueReport(models.Model):
+    ISSUE_TYPE_CHOICES = [
+        ('CARE_QUALITY', 'Care Quality Concern'),
+        ('COMMUNICATION', 'Communication Problem'),
+        ('MEDICATION', 'Medication Issue'),
+        ('SCHEDULING', 'Scheduling Problem'),
+        ('OTHER', 'Other')
+    ]
+    
+    PRIORITY_CHOICES = [
+        ('LOW', 'Low'),
+        ('MEDIUM', 'Medium'),
+        ('HIGH', 'High'),
+        ('URGENT', 'Urgent')
+    ]
+    
+    STATUS_CHOICES = [
+        ('OPEN', 'Open'),
+        ('IN_PROGRESS', 'In Progress'),
+        ('RESOLVED', 'Resolved'),
+        ('CLOSED', 'Closed')
+    ]
+    
+    patient = models.ForeignKey('Patient', on_delete=models.CASCADE, related_name='issue_reports')
+    reported_by = models.ForeignKey('User', on_delete=models.CASCADE, related_name='reported_issues')
+    issue_type = models.CharField(max_length=20, choices=ISSUE_TYPE_CHOICES)
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES)
+    description = models.TextField()
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='OPEN')
+    resolution_notes = models.TextField(blank=True)
+    resolved_by = models.ForeignKey(
+        'User', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='resolved_issues'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Issue Report #{self.id} - {self.get_issue_type_display()}"
+
+    def resolve(self, user, notes):
+        self.status = 'RESOLVED'
+        self.resolved_by = user
+        self.resolution_notes = notes
+        self.resolved_at = timezone.now()
+        self.save()
+
+class IssueResponse(models.Model):
+    issue = models.ForeignKey(IssueReport, on_delete=models.CASCADE, related_name='responses')
+    responder = models.ForeignKey('User', on_delete=models.CASCADE)
+    response = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Response to Issue #{self.issue.id} by {self.responder.get_full_name()}"

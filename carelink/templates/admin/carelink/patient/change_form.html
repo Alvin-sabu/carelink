@@ -1,0 +1,121 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls static %}
+{% load carelink_extras %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    .summary-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin: 1.5rem 0;
+    }
+    .summary-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+    }
+    .summary-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .summary-card h3 {
+        margin: 0 0 1rem 0;
+        color: var(--primary);
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+    .summary-card .stat {
+        font-size: 2rem;
+        font-weight: bold;
+        margin: 0.5rem 0;
+        color: var(--accent);
+    }
+    .summary-card .detail {
+        color: #666;
+        margin: 0.5rem 0;
+    }
+    .summary-card .status {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    .status-normal { background: #e3f2fd; color: #1976d2; }
+    .status-warning { background: #fff3e0; color: #f57c00; }
+    .status-critical { background: #ffebee; color: #d32f2f; }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if original %}
+<div class="summary-cards">
+    <div class="summary-card">
+        <h3>Health Overview</h3>
+        {% with latest_log=original.healthlog_set.last %}
+        {% if latest_log %}
+            <div class="detail">Last Check: {{ latest_log.timestamp|date:"M d, Y" }}</div>
+            <div class="detail">Temperature: {{ latest_log.temperature }}°C</div>
+            <div class="detail">Blood Pressure: {{ latest_log.blood_pressure }}</div>
+            <div class="detail">Pulse Rate: {{ latest_log.pulse_rate }} bpm</div>
+            <div class="detail">Oxygen Level: {{ latest_log.oxygen_level }}%</div>
+        {% else %}
+            <div class="detail">No health records available</div>
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="summary-card">
+        <h3>Medication Summary</h3>
+        {% with medications=original.medication_set.all %}
+        {% with active_meds=medications|filter_status:"ACTIVE" %}
+        <div class="stat">{{ active_meds|length }}</div>
+        <div class="detail">Active Medications</div>
+        {% with latest_med=active_meds|last %}
+        {% if latest_med %}
+            <div class="detail">Latest: {{ latest_med.name }}</div>
+            <div class="detail">Dosage: {{ latest_med.dosage }}</div>
+            <div class="detail">Frequency: {{ latest_med.get_frequency_display }}</div>
+        {% endif %}
+        {% endwith %}
+        {% endwith %}
+        {% endwith %}
+    </div>
+
+    <div class="summary-card">
+        <h3>Task Status</h3>
+        {% with tasks=original.task_set.all %}
+        {% with pending_tasks=tasks|filter_status:"PENDING" %}
+        <div class="stat">{{ pending_tasks|length }}</div>
+        <div class="detail">Pending Tasks</div>
+        {% if pending_tasks|length > 0 %}
+            {% with overdue=tasks|filter_status:"OVERDUE"|length %}
+            {% if overdue > 0 %}
+                <div class="status status-critical">{{ overdue }} Overdue</div>
+            {% endif %}
+            {% endwith %}
+            {% with review=tasks|filter_status:"PENDING_REVIEW"|length %}
+            {% if review > 0 %}
+                <div class="status status-warning">{{ review }} Need Review</div>
+            {% endif %}
+            {% endwith %}
+        {% endif %}
+        {% endwith %}
+        {% endwith %}
+    </div>
+
+    <div class="summary-card">
+        <h3>Care Information</h3>
+        <div class="detail">Age: {{ original.date_of_birth|get_age|default:"0" }}</div>
+        <div class="detail">Emergency Contact: {{ original.emergency_contact|default:"Not provided" }}</div>
+        <div class="detail">Caregiver: {% if original.assigned_caregiver %}{{ original.assigned_caregiver.get_full_name }}{% else %}Not Assigned{% endif %}</div>
+        <div class="detail">Medical Condition: {{ original.medical_condition|default:"None"|truncatewords:10 }}</div>
+    </div>
+</div>
+{% endif %}
+{{ block.super }}
+{% endblock %}

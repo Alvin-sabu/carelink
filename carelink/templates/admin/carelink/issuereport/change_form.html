@@ -1,0 +1,131 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    .field-status .readonly {
+        font-weight: bold;
+    }
+    .field-status .readonly.status-OPEN {
+        color: #dc3545;
+    }
+    .field-status .readonly.status-IN_PROGRESS {
+        color: #ffc107;
+    }
+    .field-status .readonly.status-RESOLVED {
+        color: #28a745;
+    }
+    .field-status .readonly.status-CLOSED {
+        color: #6c757d;
+    }
+    
+    .field-priority .readonly {
+        font-weight: bold;
+    }
+    .field-priority .readonly.priority-URGENT {
+        color: #dc3545;
+    }
+    .field-priority .readonly.priority-HIGH {
+        color: #fd7e14;
+    }
+    .field-priority .readonly.priority-MEDIUM {
+        color: #0d6efd;
+    }
+    .field-priority .readonly.priority-LOW {
+        color: #6c757d;
+    }
+    
+    .inline-group {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 2rem;
+    }
+    
+    .inline-group h2 {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+    }
+    
+    .inline-related {
+        background: #f8f9fa;
+        border-radius: 4px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .inline-related h3 {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .resolution-notes {
+        background: #e9ecef;
+        border-radius: 4px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .submit-row {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block after_field_sets %}
+{{ block.super }}
+{% if original %}
+    <div class="module aligned">
+        <h2>Issue Timeline</h2>
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-badge bg-primary">
+                    <i class="fas fa-plus"></i>
+                </div>
+                <div class="timeline-content">
+                    <h4>Issue Created</h4>
+                    <p>By {{ original.reported_by.get_full_name }} on {{ original.created_at|date:"M d, Y H:i" }}</p>
+                </div>
+            </div>
+            
+            {% for response in original.responses.all %}
+            <div class="timeline-item">
+                <div class="timeline-badge bg-info">
+                    <i class="fas fa-comment"></i>
+                </div>
+                <div class="timeline-content">
+                    <h4>Response Added</h4>
+                    <p>{{ response.response }}</p>
+                    <small>By {{ response.responder.get_full_name }} on {{ response.created_at|date:"M d, Y H:i" }}</small>
+                </div>
+            </div>
+            {% endfor %}
+            
+            {% if original.resolved_at %}
+            <div class="timeline-item">
+                <div class="timeline-badge bg-success">
+                    <i class="fas fa-check"></i>
+                </div>
+                <div class="timeline-content">
+                    <h4>Issue Resolved</h4>
+                    <p>{{ original.resolution_notes }}</p>
+                    <small>By {{ original.resolved_by.get_full_name }} on {{ original.resolved_at|date:"M d, Y H:i" }}</small>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block submit_buttons_bottom %}
+<div class="submit-row">
+    {% if original and original.status != 'RESOLVED' %}
+        <input type="submit" value="Mark as Resolved" name="_resolve" class="default" style="background-color: #28a745;">
+    {% endif %}
+    {{ block.super }}
+</div>
+{% endblock %}

@@ -90,11 +90,16 @@
                 </div>
                 <div class="card-body">
                     {% for medication in medications %}
-                    <div class="card mb-3 border-0 shadow-sm">
+                    <div class="card mb-3 border-0 shadow-sm" id="medication-{{ medication.id }}">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
-                                    <h6 class="mb-1 text-primary">{{ medication.name }}</h6>
+                                    <div class="d-flex align-items-center mb-2">
+                                        <h6 class="mb-0 text-primary">{{ medication.name }}</h6>
+                                        <span class="badge {% if medication.status == 'ACTIVE' %}bg-success{% elif medication.status == 'COMPLETED' %}bg-info{% else %}bg-warning{% endif %} ms-2">
+                                            {{ medication.get_status_display }}
+                                        </span>
+                                    </div>
                                     <p class="mb-1">
                                         <i class="fas fa-prescription me-1"></i>
                                         <strong>Dosage:</strong> {{ medication.dosage }}
@@ -107,12 +112,32 @@
                                         <i class="fas fa-calendar-check me-1"></i>
                                         <small class="text-muted">Start Date: {{ medication.start_date }}</small>
                                     </p>
+                                    {% if medication.end_date %}
+                                    <p class="mb-0">
+                                        <i class="fas fa-calendar-times me-1"></i>
+                                        <small class="text-muted">End Date: {{ medication.end_date }}</small>
+                                    </p>
+                                    {% endif %}
                                 </div>
-                                {% if medication.instructions %}
-                                <span class="badge bg-info" data-bs-toggle="tooltip" title="{{ medication.instructions }}">
-                                    <i class="fas fa-info-circle"></i>
-                                </span>
-                                {% endif %}
+                                <div class="d-flex flex-column">
+                                    {% if user.user_type == 'CAREGIVER' and user == patient.assigned_caregiver %}
+                                    <div class="dropdown">
+                                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="medicationStatus{{ medication.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                            Update Status
+                                        </button>
+                                        <ul class="dropdown-menu" aria-labelledby="medicationStatus{{ medication.id }}">
+                                            <li><a class="dropdown-item" href="#" onclick="updateMedicationStatus({{ medication.id }}, 'ACTIVE')">Active</a></li>
+                                            <li><a class="dropdown-item" href="#" onclick="updateMedicationStatus({{ medication.id }}, 'COMPLETED')">Completed</a></li>
+                                            <li><a class="dropdown-item" href="#" onclick="updateMedicationStatus({{ medication.id }}, 'DISCONTINUED')">Discontinued</a></li>
+                                        </ul>
+                                    </div>
+                                    {% endif %}
+                                    {% if medication.instructions %}
+                                    <button class="btn btn-link btn-sm text-info mt-2" data-bs-toggle="tooltip" title="{{ medication.instructions }}">
+                                        <i class="fas fa-info-circle"></i> Instructions
+                                    </button>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -264,10 +289,85 @@
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block javascript %}
+<!-- Toast notifications -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div id="successToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="toastMessage"></div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+    
+    <div id="errorToast" class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="errorToastMessage"></div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
 <script>
+function updateMedicationStatus(medicationId, newStatus) {
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    fetch(`/carelink/api/medications/${medicationId}/update-status/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify({
+            status: newStatus
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the UI
+            const medicationCard = document.getElementById(`medication-${medicationId}`);
+            const statusBadge = medicationCard.querySelector('.badge');
+            
+            // Update badge color
+            statusBadge.className = 'badge ms-2';
+            if (newStatus === 'ACTIVE') {
+                statusBadge.classList.add('bg-success');
+            } else if (newStatus === 'COMPLETED') {
+                statusBadge.classList.add('bg-info');
+            } else {
+                statusBadge.classList.add('bg-warning');
+            }
+            
+            // Update badge text
+            statusBadge.textContent = data.status_display;
+            
+            // Show success message
+            const toast = new bootstrap.Toast(document.getElementById('successToast'));
+            document.getElementById('toastMessage').textContent = 'Medication status updated successfully';
+            toast.show();
+        } else {
+            // Show error message
+            const toast = new bootstrap.Toast(document.getElementById('errorToast'));
+            document.getElementById('errorToastMessage').textContent = data.error || 'Failed to update medication status';
+            toast.show();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        const toast = new bootstrap.Toast(document.getElementById('errorToast'));
+        document.getElementById('errorToastMessage').textContent = 'An error occurred while updating medication status';
+        toast.show();
+    });
+}
+
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+
 $(document).ready(function() {
     // Initialize tooltips
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))

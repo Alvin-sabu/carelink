@@ -1,130 +1,100 @@
-from django.utils import timezone
 from django.contrib import admin
-from .models import User, Patient, HealthLog, Task, Medication, Communication, Notification, CareRequest
-from django.contrib import messages
-# Register User model with custom admin view
-@admin.register(User)
-class UserAdmin(admin.ModelAdmin):
-    list_display = ('username', 'email', 'user_type', 'phone_number')
-    search_fields = ('username', 'email', 'phone_number')
-    list_filter = ('user_type',)
-    ordering = ('username',)
-
-# Register Patient model with custom admin view
-@admin.register(Patient)
-class PatientAdmin(admin.ModelAdmin):
-    list_display = ('first_name', 'last_name', 'date_of_birth', 'assigned_caregiver')
-    search_fields = ('first_name', 'last_name', 'assigned_caregiver__username')
-    list_filter = ('date_of_birth',)
-    filter_horizontal = ('family_members',)
-
-# Register HealthLog model
-@admin.register(HealthLog)
-class HealthLogAdmin(admin.ModelAdmin):
-    list_display = ('patient', 'caregiver', 'temperature', 'blood_pressure', 'pulse_rate', 'timestamp')
-    search_fields = ('patient__first_name', 'caregiver__username')
-    list_filter = ('timestamp',)
-
-# Register Task model
-@admin.register(Task)
-class TaskAdmin(admin.ModelAdmin):
-    list_display = ('title', 'patient', 'caregiver', 'priority', 'status', 'due_date', 'completed_at')
-    search_fields = ('title', 'patient__first_name', 'caregiver__username')
-    list_filter = ('priority', 'status', 'due_date')
-    actions = ['mark_selected_as_completed']
-
-    def mark_selected_as_completed(self, request, queryset):
-        queryset.update(status='COMPLETED', completed_at=timezone.now())
-        self.message_user(request, "Selected tasks marked as completed.")
-    mark_selected_as_completed.short_description = "Mark selected tasks as completed"
-
-# Register Medication model
-@admin.register(Medication)
-class MedicationAdmin(admin.ModelAdmin):
-    list_display = ('name', 'patient', 'start_date', 'end_date', 'created_by')
-    search_fields = ('name', 'patient__first_name', 'created_by__username')
-    list_filter = ('start_date', 'end_date')
-
-# Register Communication model
-@admin.register(Communication)
-class CommunicationAdmin(admin.ModelAdmin):
-    list_display = ('sender', 'receiver', 'patient', 'timestamp', 'is_read')
-    search_fields = ('sender__username', 'receiver__username', 'patient__first_name')
-    list_filter = ('is_read', 'timestamp')
-
-# Register Notification model
-@admin.register(Notification)
-class NotificationAdmin(admin.ModelAdmin):
-    list_display = ('user', 'type', 'title', 'is_read', 'created_at')
-    search_fields = ('user__username', 'title')
-    list_filter = ('type', 'is_read', 'created_at')
-
-# Register CareRequest model
-import logging
-from django.contrib import admin, messages
+from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
-from .models import CareRequest, User, Patient
+from django.http import HttpResponseRedirect
+from .models import (
+    User, Patient, HealthTip, IssueReport, IssueResponse,
+    HealthDocument, Task, MedicationLog, Medication, MedicationSchedule, HealthLog, Notification
+)
 
-# Configure logging
-logger = logging.getLogger(__name__)
+class CareLinkAdminSite(admin.AdminSite):
+    site_header = _('CareLink Administration')
+    site_title = _('CareLink Admin')
+    index_title = _('CareLink Management')
+    
+    def each_context(self, request):
+        context = super().each_context(request)
+        try:
+            context.update({
+                'patient_count': Patient.objects.count(),
+                'caregiver_count': User.objects.filter(user_type='CAREGIVER').count(),
+                'task_count': Task.objects.filter(status='PENDING').count(),
+                'open_issues_count': IssueReport.objects.filter(status='OPEN').count()
+            })
+        except Exception as e:
+            print(f"Error getting counts: {e}")
+            context.update({
+                'patient_count': 0,
+                'caregiver_count': 0,
+                'task_count': 0,
+                'open_issues_count': 0
+            })
+        return context
 
-@admin.register(CareRequest)
-class CareRequestAdmin(admin.ModelAdmin):
-    list_display = ['patient_name', 'user', 'status', 'request_date']
-    actions = ['approve_care_request']
+admin_site = CareLinkAdminSite(name='carelink_admin')
 
-    def approve_care_request(self, request, queryset):
-        for care_request in queryset:
-            try:
-                # Log the care request details
-                print(f"Approving care request: {care_request.id} for patient: {care_request.patient_name}")
+class IssueResponseInline(admin.TabularInline):
+    model = IssueResponse
+    extra = 1
+    readonly_fields = ['created_at']
 
-                # Find an available caregiver
-                caregiver = User.objects.filter(
-                    user_type='CAREGIVER', 
-                    assigned_patients__isnull=True
-                ).first()
+@admin.register(IssueReport, site=admin_site)
+class IssueReportAdmin(admin.ModelAdmin):
+    list_display = ['id', 'patient_name', 'issue_type', 'priority', 'status', 'reported_by_name', 'created_at']
+    list_filter = ['status', 'priority', 'issue_type', 'created_at']
+    search_fields = ['patient__first_name', 'patient__last_name', 'description']
+    readonly_fields = ['created_at', 'updated_at', 'resolved_at']
+    inlines = [IssueResponseInline]
+    
+    fieldsets = [
+        ('Issue Information', {
+            'fields': [
+                'patient', 'reported_by', 'issue_type', 'priority', 'status',
+                'description', 'created_at', 'updated_at'
+            ]
+        }),
+        ('Resolution', {
+            'fields': ['resolved_by', 'resolution_notes', 'resolved_at'],
+            'classes': ['collapse'],
+        }),
+    ]
+    
+    def response_change(self, request, obj):
+        if "_resolve" in request.POST:
+            obj.status = 'RESOLVED'
+            obj.resolved_by = request.user
+            obj.resolved_at = timezone.now()
+            obj.save()
+            
+            # Create notification for the reporting user
+            Notification.objects.create(
+                user=obj.reported_by,
+                type='SYSTEM',
+                title='Issue Resolved',
+                message=f'Your reported issue has been resolved by {request.user.get_full_name()}'
+            )
+            
+            self.message_user(request, 'Issue has been marked as resolved.')
+            return HttpResponseRedirect(".")
+        return super().response_change(request, obj)
+    
+    def patient_name(self, obj):
+        return obj.patient.get_full_name()
+    patient_name.short_description = 'Patient'
+    
+    def reported_by_name(self, obj):
+        return obj.reported_by.get_full_name()
+    reported_by_name.short_description = 'Reported By'
 
-                if not caregiver:
-                    print("No available caregiver found.")
-                    self.message_user(request, "No available caregiver", messages.ERROR)
-                    continue
-
-                # Create the patient record
-                patient = Patient.objects.create(
-                    first_name=care_request.patient_name.split()[0],
-                    last_name=care_request.patient_last_name or '',
-                    date_of_birth=care_request.patient_date_of_birth or timezone.now().date(),
-                    medical_condition=care_request.patient_condition or 'Not specified',
-                    emergency_contact=care_request.emergency_contact or 'N/A',
-                    address=care_request.patient_address or 'Not provided',
-                    assigned_caregiver=caregiver
-                )
-
-                # Add family member
-                patient.family_members.add(care_request.user)
-
-                # Update care request
-                care_request.status = 'APPROVED'
-                care_request.caregiver = caregiver
-                care_request.save()
-
-                print(f"Patient created successfully: {patient.id}")
-                self.message_user(request, f"Approved request, created patient: {patient.id}")
-
-            except Exception as e:
-                print(f"Error approving care request {care_request.id}: {str(e)}")
-                self.message_user(request, f"Error: {str(e)}", messages.ERROR)
-
-    approve_care_request.short_description = "Approve selected care requests"
-
-
-from django.contrib import admin
-from .models import HealthTip
-
-@admin.register(HealthTip)
-class HealthTipAdmin(admin.ModelAdmin):
-    list_display = ('title', 'author', 'created_at', 'updated_at')
-    search_fields = ('title', 'content', 'author__username')
-    list_filter = ('created_at', 'updated_at', 'author')
-    ordering = ('-created_at',)
+# Register other models
+admin_site.register(User)
+admin_site.register(Patient)
+admin_site.register(HealthTip)
+admin_site.register(HealthDocument)
+admin_site.register(Task)
+admin_site.register(MedicationLog)
+admin_site.register(Medication)
+admin_site.register(MedicationSchedule)
+admin_site.register(HealthLog)
+admin_site.register(Notification)
+admin_site.register(IssueResponse)

@@ -28,9 +28,11 @@ urlpatterns = [
     path('notifications/', views.NotificationsView.as_view(), name='notifications_list'),
     path('notifications/<int:notification_id>/mark-read/', views.mark_notification_read, name='mark_notification_read'),
     path('notifications/mark-all-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
-    path('messages/', views.MessagesView.as_view(), name='messages_list'),
-    path('messages/<int:user_id>/<int:patient_id>/', views.ConversationView.as_view(), name='conversation'),
-    path('messages/send/<int:receiver_id>/', views.SendMessageView.as_view(), name='send_message'),
+    path('messages/', views.MessagesListView.as_view(), name='messages_list'),
+    path('conversation/<int:user_id>/<int:patient_id>/', views.ConversationView.as_view(), name='conversation'),
+    path('message/send/', views.send_message, name='send_message'),
+    path('message/<int:message_id>/mark-read/', views.mark_message_read, name='mark_message_read'),
+    path('message/<int:message_id>/attachment/', views.download_attachment, name='download_attachment'),
     path('task/add/', views.AddTaskView.as_view(), name='add_task'),
     path('patient/<int:pk>/medication/add/', views.AddMedicationView.as_view(), name='add_medication'),
     path('patient/<int:patient_id>/health/', views.HealthDashboardView.as_view(), name='health_dashboard'),
@@ -56,10 +58,19 @@ urlpatterns = [
     path('api/patient/<int:patient_id>/medication-adherence/', views.get_patient_medication_adherence, name='get_patient_medication_adherence'),
     path('api/patient/<int:patient_id>/alerts/', views.get_patient_alerts, name='get_patient_alerts'),
     path('api/patient/<int:patient_id>/task-progress/', views.get_patient_task_progress, name='get_patient_task_progress'),
+    path('api/medications/<int:medication_id>/update-status/', views.update_medication_status, name='update_medication_status'),
+    path('api/patient/<int:patient_id>/medication/add/', views.add_medication, name='add_medication'),
+    path('api/medication/mark-taken/', views.mark_medication_taken, name='mark_medication_taken'),
+    path('api/report-issue/', views.report_issue, name='report_issue'),
     
     # Health recommendation views
     path('recommendations/', views.recommendations_view, name='recommendations'),
     path('get_ai_recommendations/<int:patient_id>/', views.get_ai_recommendations, name='get_ai_recommendations'),
+    
+    # Issue management
+    path('issues/', views.issue_management, name='issue_management'),
+    path('api/issue-detail/', views.issue_detail, name='issue_detail'),
+    path('api/respond-to-issue/', views.respond_to_issue, name='respond_to_issue'),
     
     # Authentication URLs
     path('accounts/logout/', auth_views.LogoutView.as_view(next_page='carelink:home'), name='logout'),
@@ -88,7 +99,5 @@ urlpatterns = [
     path('api/patient/<int:patient_id>/vitals/', views.get_vitals_data, name='get_vitals_data'),
     path('api/patient/<int:patient_id>/health-metrics/', views.get_health_metrics, name='get_health_metrics'),
     path('api/patient/<int:patient_id>/recent-activities/', views.get_recent_activities, name='get_recent_activities'),
-    path('api/patient/<int:patient_id>/medication/add/', views.add_medication, name='add_medication'),
-    path('api/medication/mark-taken/', views.mark_medication_taken, name='mark_medication_taken'),
     path('verify-email/<str:uidb64>/<str:token>/', views.VerifyEmailView.as_view(), name='verify_email'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

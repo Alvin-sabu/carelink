@@ -3,21 +3,40 @@
 {% load carelink_extras %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
+<div class="container-fluid px-4 py-3">
+    <div class="row g-4">
         <!-- Patient Information -->
-        <div class="col-md-4">
-            <div class="card shadow-sm border-0 rounded-lg">
-                <div class="card-header bg-primary text-white text-center">
-                    <h5 class="mb-0">Patient Information</h5>
+        <div class="col-md-3">
+            <div class="card shadow-lg border-0 rounded-lg h-100">
+                <div class="card-header bg-gradient-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-user-circle me-2"></i>Patient Profile</h5>
                 </div>
-                <div class="card-body text-center">
-                    <h4 class="fw-bold">{{ patient.first_name }} {{ patient.last_name }}</h4>
-                    <p class="text-muted">Patient ID: {{ patient.id }}</p>
-                    <p><strong>Age:</strong> {{ patient.date_of_birth|timesince }} old</p>
-                    <p><strong>Medical Condition:</strong> {{ patient.medical_condition }}</p>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <div class="avatar-circle mb-3">
+                            <span class="initials">{{ patient.first_name|first }}{{ patient.last_name|first }}</span>
+                        </div>
+                        <h4 class="fw-bold text-primary">{{ patient.first_name }} {{ patient.last_name }}</h4>
+                        <span class="badge bg-light text-dark">ID: {{ patient.id }}</span>
+                    </div>
+                    <div class="info-list">
+                        <div class="info-item d-flex align-items-center mb-3">
+                            <i class="fas fa-calendar-alt text-primary me-2"></i>
+                            <div>
+                                <small class="text-muted d-block">Age</small>
+                                <strong>{{ patient.date_of_birth|timesince }} old</strong>
+                            </div>
+                        </div>
+                        <div class="info-item d-flex align-items-center mb-3">
+                            <i class="fas fa-heartbeat text-danger me-2"></i>
+                            <div>
+                                <small class="text-muted d-block">Condition</small>
+                                <strong>{{ patient.medical_condition }}</strong>
+                            </div>
+                        </div>
+                    </div>
                     <hr>
-                    <button class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#reportModal">
+                    <button class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#reportModal">
                         <i class="fas fa-file-medical me-2"></i> Generate Report
                     </button>
                 </div>
@@ -25,93 +44,83 @@
         </div>
 
         <!-- AI Care Recommendations -->
-        <div class="col-md-8">
-            <div class="card shadow-sm border-0 rounded-lg" id="recommendationsContainer">
-                <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">AI Care Recommendations</h5>
-                    <button class="btn btn-light" onclick="downloadRecommendationsPDF()">
-                        <i class="fas fa-download"></i> Download PDF
+        <div class="col-md-5">
+            <div class="card shadow-lg border-0 rounded-lg h-100" id="recommendationsContainer">
+                <div class="card-header bg-gradient-warning text-dark d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-robot me-2"></i>AI Care Recommendations</h5>
+                    <button class="btn btn-sm btn-light" onclick="downloadRecommendationsPDF()">
+                        <i class="fas fa-download me-1"></i> Download PDF
                     </button>
                 </div>
-                <div class="card-body" id="recommendations-container">
-                    <div class="text-center mb-4">
-                        <h4>{{ patient.first_name }} {{ patient.last_name }}</h4>
-                        <p class="text-muted">{{ patient.date_of_birth|date:"F d, Y" }}</p>
-                    </div>
+                <div class="card-body custom-scrollbar" id="recommendations-container">
                     <div id="recommendationsList">
-                        <p class="text-muted text-center">Loading recommendations...</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Vital Signs Trends -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card shadow-sm border-0 rounded-lg">
-                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Vital Signs Trends</h5>
-                    <div class="btn-group">
-                        <button class="btn btn-light btn-sm" onclick="updateChart('week')">Week</button>
-                        <button class="btn btn-light btn-sm" onclick="updateChart('month')">Month</button>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <canvas id="vitalsChart" height="200"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Health Analytics -->
-    <div class="row mt-4">
-        <div class="col-md-6">
-            <div class="card shadow-sm border-0 rounded-lg">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">Health Metrics</h5>
-                </div>
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6>Blood Pressure Stability</h6>
-                        <div class="progress" style="width: 60%;">
-                            <div class="progress-bar" role="progressbar" data-metric="bp_stability" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6>Temperature Trend</h6>
-                        <div class="progress" style="width: 60%;">
-                            <div class="progress-bar bg-success" role="progressbar" data-metric="temp_stability" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h6>Overall Health Score</h6>
-                        <div class="progress" style="width: 60%;">
-                            <div class="progress-bar bg-warning" role="progressbar" data-metric="overall_score" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card shadow-sm border-0 rounded-lg">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">Recent Activities</h5>
-                </div>
-                <div class="card-body">
-                    <div class="timeline">
-                        {% for activity in recent_activities %}
-                        <div class="timeline-item">
-                            <div class="timeline-marker"></div>
-                            <div class="timeline-content">
-                                <h6 class="mb-1">{{ activity.title }}</h6>
-                                <p class="mb-0 text-muted">{{ activity.timestamp|date:"F d, Y H:i" }}</p>
+                        <div class="d-flex justify-content-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
                             </div>
                         </div>
-                        {% empty %}
-                        <p class="text-muted text-center">No recent activities</p>
-                        {% endfor %}
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Health Analytics -->
+        <div class="col-md-4">
+            <div class="card shadow-lg border-0 rounded-lg h-100">
+                <div class="card-header bg-gradient-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Health Analytics</h5>
+                </div>
+                <div class="card-body p-3">
+                    <div class="analytics-item mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="fw-bold">Blood Pressure Stability</h6>
+                            <span class="metric-value fw-bold text-primary" data-metric="bp_stability">0%</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated" role="progressbar" data-metric="bp_stability" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                    <div class="analytics-item mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="fw-bold">Temperature Trend</h6>
+                            <span class="metric-value fw-bold text-success" data-metric="temp_stability">0%</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" data-metric="temp_stability" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                    <div class="analytics-item">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="fw-bold">Overall Health Score</h6>
+                            <span class="metric-value fw-bold text-warning" data-metric="overall_score">0%</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-warning progress-bar-striped progress-bar-animated" role="progressbar" data-metric="overall_score" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Vital Signs Trends -->
+<div class="container-fluid px-4 mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-header bg-gradient-info text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-heartbeat me-2"></i>Vital Signs Trends</h5>
+                    <div class="btn-group">
+                        <button class="btn btn-light btn-sm" onclick="updateChart('day')">Day</button>
+                        <button class="btn btn-light btn-sm active" onclick="updateChart('week')">Week</button>
+                        <button class="btn btn-light btn-sm" onclick="updateChart('month')">Month</button>
+                        <button class="btn btn-light btn-sm" onclick="updateChart('year')">Year</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="vitalsChart" height="300"></canvas>
+                    <div id="vitalStats" class="mt-4 row g-3"></div>
                 </div>
             </div>
         </div>
@@ -122,21 +131,134 @@
 <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="reportModalLabel">Generate Report</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header bg-gradient-primary text-white">
+                <h5 class="modal-title" id="reportModalLabel"><i class="fas fa-file-medical me-2"></i>Generate Report</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>Select the type of report you want to generate:</p>
+                <p class="text-muted">Select the type of report you want to generate:</p>
                 <div class="d-grid gap-2">
-                    <a class="btn btn-outline-primary" href="{% url 'carelink:generate_health_report' patient.id %}?type=daily">Daily Report</a>
-                    <a class="btn btn-outline-primary" href="{% url 'carelink:generate_health_report' patient.id %}?type=weekly">Weekly Report</a>
-                    <a class="btn btn-outline-primary" href="{% url 'carelink:generate_health_report' patient.id %}?type=monthly">Monthly Report</a>
+                    <a class="btn btn-outline-primary" href="{% url 'carelink:generate_health_report' patient.id %}?type=daily">
+                        <i class="fas fa-calendar-day me-2"></i>Daily Report
+                    </a>
+                    <a class="btn btn-outline-primary" href="{% url 'carelink:generate_health_report' patient.id %}?type=weekly">
+                        <i class="fas fa-calendar-week me-2"></i>Weekly Report
+                    </a>
+                    <a class="btn btn-outline-primary" href="{% url 'carelink:generate_health_report' patient.id %}?type=monthly">
+                        <i class="fas fa-calendar-alt me-2"></i>Monthly Report
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+.bg-gradient-primary {
+    background: linear-gradient(45deg, #4e73df, #224abe);
+}
+.bg-gradient-success {
+    background: linear-gradient(45deg, #1cc88a, #13855c);
+}
+.bg-gradient-info {
+    background: linear-gradient(45deg, #36b9cc, #258391);
+}
+.bg-gradient-warning {
+    background: linear-gradient(45deg, #f6c23e, #dda20a);
+}
+.avatar-circle {
+    width: 100px;
+    height: 100px;
+    background-color: #4e73df;
+    border-radius: 50%;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.initials {
+    font-size: 2.5rem;
+    color: white;
+    font-weight: bold;
+}
+.custom-scrollbar {
+    max-height: 400px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #4e73df #f8f9fc;
+}
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f8f9fc;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #4e73df;
+    border-radius: 3px;
+}
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+.timeline-item {
+    position: relative;
+    padding-bottom: 1.5rem;
+}
+.timeline-marker {
+    position: absolute;
+    left: -30px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -24px;
+    top: 12px;
+    bottom: 0;
+    width: 1px;
+    background: #e3e6f0;
+}
+.timeline-item:last-child::before {
+    display: none;
+}
+.recommendation-item {
+    padding: 1rem;
+    border-left: 4px solid #4e73df;
+    background-color: #f8f9fc;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+}
+.info-item i {
+    font-size: 1.2rem;
+    width: 30px;
+}
+.metric-value {
+    font-weight: bold;
+    color: #4e73df;
+}
+.btn-xs {
+    font-size: 0.7rem;
+    line-height: 1;
+}
+.vital-signs-compact .chart-container {
+    margin: 0 -10px;
+}
+.vital-stat-card {
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+.stat-label {
+    font-weight: bold;
+    margin-right: 0.5rem;
+}
+.stat-value {
+    font-weight: bold;
+}
+</style>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -234,13 +356,30 @@ function initVitalsChart() {
         data: {
             labels: [],
             datasets: [{
-                label: 'Blood Pressure',
+                label: 'Systolic BP (mmHg)',
                 borderColor: 'rgb(255, 99, 132)',
-                data: []
+                data: [],
+                yAxisID: 'y-bp'
             }, {
-                label: 'Temperature',
+                label: 'Diastolic BP (mmHg)',
+                borderColor: 'rgb(255, 159, 64)',
+                data: [],
+                yAxisID: 'y-bp'
+            }, {
+                label: 'Temperature (°C)',
                 borderColor: 'rgb(54, 162, 235)',
-                data: []
+                data: [],
+                yAxisID: 'y-temp'
+            }, {
+                label: 'Pulse Rate (bpm)',
+                borderColor: 'rgb(75, 192, 192)',
+                data: [],
+                yAxisID: 'y-pulse'
+            }, {
+                label: 'Oxygen Level (%)',
+                borderColor: 'rgb(153, 102, 255)',
+                data: [],
+                yAxisID: 'y-oxygen'
             }]
         },
         options: {
@@ -250,8 +389,61 @@ function initVitalsChart() {
                 intersect: false,
             },
             scales: {
-                y: {
-                    beginAtZero: false
+                'y-bp': {
+                    type: 'linear',
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Blood Pressure (mmHg)'
+                    },
+                    grid: {
+                        color: 'rgba(255, 99, 132, 0.2)'
+                    }
+                },
+                'y-temp': {
+                    type: 'linear',
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Temperature (°C)'
+                    },
+                    grid: {
+                        color: 'rgba(54, 162, 235, 0.2)'
+                    }
+                },
+                'y-pulse': {
+                    type: 'linear',
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Pulse Rate (bpm)'
+                    },
+                    grid: {
+                        color: 'rgba(75, 192, 192, 0.2)'
+                    }
+                },
+                'y-oxygen': {
+                    type: 'linear',
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Oxygen Level (%)'
+                    },
+                    grid: {
+                        color: 'rgba(153, 102, 255, 0.2)'
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.dataset.label || '';
+                            const value = context.parsed.y;
+                            if (value === null) return label + ': No data';
+                            return label + ': ' + value;
+                        }
+                    }
                 }
             }
         }
@@ -260,6 +452,14 @@ function initVitalsChart() {
 }
 
 function updateChart(period) {
+    // Update active button state
+    document.querySelectorAll('.btn-group .btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.textContent.toLowerCase() === period) {
+            btn.classList.add('active');
+        }
+    });
+
     fetch(`{% url 'carelink:get_vitals_data' patient.id %}?period=${period}`, {
         headers: {
             'X-CSRFToken': '{{ csrf_token }}'
@@ -268,16 +468,68 @@ function updateChart(period) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            vitalsChart.data.labels = data.labels;
-            vitalsChart.data.datasets[0].data = data.bp_data;
-            vitalsChart.data.datasets[1].data = data.temp_data;
+            const vitalsData = data.data;
+            
+            // Update chart labels
+            vitalsChart.data.labels = vitalsData.labels;
+            
+            // Update datasets
+            vitalsChart.data.datasets[0].data = vitalsData.blood_pressure.systolic;
+            vitalsChart.data.datasets[1].data = vitalsData.blood_pressure.diastolic;
+            vitalsChart.data.datasets[2].data = vitalsData.temperature.values;
+            vitalsChart.data.datasets[3].data = vitalsData.pulse_rate.values;
+            vitalsChart.data.datasets[4].data = vitalsData.oxygen_level.values;
+            
+            // Update chart
             vitalsChart.update();
+            
+            // Update stats if available
+            if (vitalsData.stats) {
+                updateVitalStats(vitalsData.stats);
+            }
+        } else {
+            console.error('Failed to fetch vital signs data:', data.error);
         }
     })
     .catch(error => console.error('Error:', error));
 }
 
+function updateVitalStats(stats) {
+    const statsContainer = document.getElementById('vitalStats');
+    if (statsContainer) {
+        statsContainer.innerHTML = `
+            <div class="row g-2">
+                <div class="col-6 col-md-3">
+                    <div class="vital-stat-card border-start border-danger ps-2">
+                        <span class="stat-label">BP:</span>
+                        <span class="stat-value">${stats.bp_min || 'N/A'} - ${stats.bp_max || 'N/A'}</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="vital-stat-card border-start border-info ps-2">
+                        <span class="stat-label">Temp:</span>
+                        <span class="stat-value">${stats.temp_min?.toFixed(1) || 'N/A'} - ${stats.temp_max?.toFixed(1) || 'N/A'}°C</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="vital-stat-card border-start border-success ps-2">
+                        <span class="stat-label">Pulse:</span>
+                        <span class="stat-value">${stats.pulse_min || 'N/A'} - ${stats.pulse_max || 'N/A'} bpm</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="vital-stat-card border-start border-primary ps-2">
+                        <span class="stat-label">O₂:</span>
+                        <span class="stat-value">${stats.oxygen_min || 'N/A'} - ${stats.oxygen_max || 'N/A'}%</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+}
+
 function updateHealthMetrics() {
+    console.log('Updating health metrics...');
     fetch(`{% url 'carelink:get_health_metrics' patient.id %}`, {
         headers: {
             'X-CSRFToken': '{{ csrf_token }}'
@@ -285,24 +537,35 @@ function updateHealthMetrics() {
     })
     .then(response => response.json())
     .then(data => {
+        console.log('Health metrics data received:', data);
         if (data.success) {
             // Update Blood Pressure Stability
             const bpBar = document.querySelector('[data-metric="bp_stability"]');
+            const bpValue = document.querySelector('.metric-value[data-metric="bp_stability"]');
             bpBar.style.width = `${data.bp_stability}%`;
             bpBar.setAttribute('aria-valuenow', data.bp_stability);
+            bpValue.textContent = `${data.bp_stability}%`;
             
             // Update Temperature Stability
             const tempBar = document.querySelector('[data-metric="temp_stability"]');
+            const tempValue = document.querySelector('.metric-value[data-metric="temp_stability"]');
             tempBar.style.width = `${data.temp_stability}%`;
             tempBar.setAttribute('aria-valuenow', data.temp_stability);
+            tempValue.textContent = `${data.temp_stability}%`;
             
             // Update Overall Health Score
             const scoreBar = document.querySelector('[data-metric="overall_score"]');
+            const scoreValue = document.querySelector('.metric-value[data-metric="overall_score"]');
             scoreBar.style.width = `${data.overall_score}%`;
             scoreBar.setAttribute('aria-valuenow', data.overall_score);
+            scoreValue.textContent = `${data.overall_score}%`;
+        } else {
+            console.error('Failed to get health metrics:', data.error || 'Unknown error');
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => {
+        console.error('Error updating health metrics:', error);
+    });
 }
 
 function updateRecentActivities() {
@@ -318,11 +581,10 @@ function updateRecentActivities() {
             if (data.activities && data.activities.length > 0) {
                 timelineContainer.innerHTML = data.activities.map(activity => `
                     <div class="timeline-item">
-                        <div class="timeline-marker"></div>
+                        <div class="timeline-marker bg-primary"></div>
                         <div class="timeline-content">
-                            <h6 class="mb-1">${activity.title}</h6>
-                            <p class="mb-0 text-muted">${new Date(activity.timestamp).toLocaleString()}</p>
-                            ${activity.details ? `<small class="text-muted">${activity.details}</small>` : ''}
+                            <h6 class="mb-1">{{ activity.title }}</h6>
+                            <p class="mb-0 text-muted">{{ activity.timestamp|date:"F d, Y H:i" }}</p>
                         </div>
                     </div>
                 `).join('');
@@ -339,11 +601,22 @@ function updateRecentActivities() {
 
 let vitalsChart;
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM fully loaded');
+    
+    // Initialize vital signs chart
     vitalsChart = initVitalsChart();
     updateChart('week');
+    
+    // Load data for different sections independently
     fetchRecommendations();
-    updateHealthMetrics();
+    
+    // Ensure health metrics are loaded with a slight delay to avoid conflicts
+    setTimeout(() => {
+        updateHealthMetrics();
+    }, 500);
+    
     updateRecentActivities();
+    
     // Update data every 5 minutes
     setInterval(() => {
         updateHealthMetrics();
@@ -352,88 +625,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<style>
-/* Recommendation styles */
-.recommendation-item {
-    border-left: 4px solid #007bff;
-    padding: 15px;
-    background-color: #f8f9fa;
-    border-radius: 0 8px 8px 0;
-    transition: all 0.3s ease;
-}
-
-.recommendation-item:hover {
-    transform: translateX(5px);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-/* Timeline styles */
-.timeline {
-    position: relative;
-    padding: 20px 0;
-}
-
-.timeline-item {
-    position: relative;
-    padding-left: 30px;
-    margin-bottom: 20px;
-}
-
-.timeline-marker {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: #007bff;
-    border: 2px solid #fff;
-    box-shadow: 0 0 0 2px #007bff;
-}
-
-.timeline-item:before {
-    content: '';
-    position: absolute;
-    left: 5px;
-    top: 12px;
-    bottom: -20px;
-    width: 2px;
-    background: #007bff;
-}
-
-.timeline-item:last-child:before {
-    display: none;
-}
-
-/* Health Metrics styles */
-.progress {
-    height: 8px;
-    border-radius: 4px;
-}
-
-.progress-bar {
-    transition: width 0.6s ease;
-}
-
-/* Medication table styles */
-.table th {
-    border-top: none;
-}
-
-.table td {
-    vertical-align: middle;
-}
-
-/* Print styles */
-@media print {
-    .btn-group, .btn {
-        display: none !important;
-    }
-    
-    .card {
-        break-inside: avoid;
-        margin-bottom: 20px;
-    }
-}
-</style>
 {% endblock %}

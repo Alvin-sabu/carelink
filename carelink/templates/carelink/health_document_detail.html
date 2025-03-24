@@ -55,21 +55,69 @@
 
                     <div class="document-preview mb-4">
                         {% if document.document.name|lower|slice:"-3:" == 'pdf' %}
-                            <div class="ratio ratio-16x9">
-                                <iframe src="{{ document.document.url }}" 
-                                        class="rounded" 
-                                        title="{{ document.title }}">
-                                </iframe>
+                            <div class="ratio ratio-4x3">
+                                <object data="{{ document.document.url }}" 
+                                        type="application/pdf" 
+                                        class="rounded w-100 h-100">
+                                    <div class="text-center py-5 bg-light rounded">
+                                        <i class="fas fa-file-pdf text-danger fa-3x mb-3"></i>
+                                        <h5 class="text-muted">PDF Preview Not Available</h5>
+                                        <p class="text-muted mb-3">Your browser may not support PDF preview.</p>
+                                        <a href="{{ document.document.url }}" 
+                                           class="btn btn-primary"
+                                           target="_blank">
+                                            <i class="fas fa-external-link-alt me-2"></i>
+                                            Open PDF in New Tab
+                                        </a>
+                                    </div>
+                                </object>
                             </div>
-                        {% elif document.document.name|lower|slice:"-3:" in 'jpg,png,gif' %}
-                            <img src="{{ document.document.url }}" 
-                                 alt="{{ document.title }}" 
-                                 class="img-fluid rounded">
+                        {% elif document.document.name|lower|slice:"-3:" in 'jpg,jpeg,png,gif,bmp,svg' %}
+                            <div class="text-center">
+                                <img src="{{ document.document.url }}" 
+                                     alt="{{ document.title }}" 
+                                     class="img-fluid rounded shadow-sm"
+                                     style="max-height: 600px;">
+                            </div>
+                        {% elif document.document.name|lower|slice:"-3:" in 'doc,docx' %}
+                            <div class="text-center py-5 bg-light rounded">
+                                <i class="fas fa-file-word text-primary fa-3x mb-3"></i>
+                                <h5 class="text-muted">Word Document</h5>
+                                <p class="text-muted mb-3">Preview not available for Word documents.</p>
+                                <a href="{{ document.document.url }}" 
+                                   class="btn btn-primary"
+                                   download>
+                                    <i class="fas fa-download me-2"></i>
+                                    Download Document
+                                </a>
+                            </div>
+                        {% elif document.document.name|lower|slice:"-3:" in 'xls,xlsx,csv' %}
+                            <div class="text-center py-5 bg-light rounded">
+                                <i class="fas fa-file-excel text-success fa-3x mb-3"></i>
+                                <h5 class="text-muted">Spreadsheet</h5>
+                                <p class="text-muted mb-3">Preview not available for spreadsheet files.</p>
+                                <a href="{{ document.document.url }}" 
+                                   class="btn btn-primary"
+                                   download>
+                                    <i class="fas fa-download me-2"></i>
+                                    Download Document
+                                </a>
+                            </div>
+                        {% elif document.document.name|lower|slice:"-3:" == 'txt' %}
+                            <div class="bg-light rounded p-4">
+                                <pre class="mb-0" style="white-space: pre-wrap;">{{ document_text|default:"Text content could not be loaded." }}</pre>
+                            </div>
                         {% else %}
                             <div class="text-center py-5 bg-light rounded">
-                                <i class="fas fa-file-medical text-primary fa-3x mb-3"></i>
+                                <i class="fas fa-file text-secondary fa-3x mb-3"></i>
                                 <h5 class="text-muted">Document Preview Not Available</h5>
-                                <p class="text-muted mb-0">Click the download button below to view the document.</p>
+                                <p class="text-muted mb-3">This file type cannot be previewed.</p>
+                                <a href="{{ document.document.url }}" 
+                                   class="btn btn-primary"
+                                   download>
+                                    <i class="fas fa-download me-2"></i>
+                                    Download Document
+                                </a>
                             </div>
                         {% endif %}
                     </div>

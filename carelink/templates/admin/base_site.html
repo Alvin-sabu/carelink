@@ -1,0 +1,241 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('CareLink Admin') }}{% endblock %}
+
+{% block extrastyle %}
+<style>
+    :root {
+        --primary: #2c5282;
+        --secondary: #4299e1;
+        --accent: #3182ce;
+        --primary-fg: #fff;
+        --body-bg: #f7fafc;
+        --body-quiet-color: #718096;
+        --body-loud-color: #2d3748;
+    }
+
+    /* Global Styles */
+    body {
+        background: var(--body-bg);
+    }
+
+    /* Header */
+    #header {
+        background: var(--primary);
+        color: var(--primary-fg);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    #header a:link, #header a:visited {
+        color: var(--primary-fg);
+    }
+
+    /* Branding */
+    #branding h1 {
+        font-weight: bold;
+        font-size: 1.5rem;
+    }
+
+    /* Content */
+    #content {
+        padding: 2rem;
+    }
+
+    .module h2, .module caption {
+        background: var(--primary);
+        color: var(--primary-fg);
+        font-size: 1rem;
+        font-weight: 600;
+        padding: 0.8rem 1rem;
+    }
+
+    div.breadcrumbs {
+        background: var(--secondary);
+        padding: 0.8rem 2rem;
+        color: var(--primary-fg);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    /* Links */
+    a:link, a:visited {
+        color: var(--accent);
+        text-decoration: none;
+    }
+
+    a:hover {
+        color: var(--primary);
+    }
+
+    /* Buttons */
+    .button, input[type=submit], input[type=button], .submit-row input, a.button {
+        background: var(--primary);
+        color: var(--primary-fg);
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        border: none;
+        font-weight: 500;
+        transition: background 0.2s;
+    }
+
+    .button:hover, input[type=submit]:hover, input[type=button]:hover {
+        background: var(--secondary);
+    }
+
+    .button.default, input[type=submit].default {
+        background: var(--accent);
+    }
+
+    /* Messages */
+    .messagelist li {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 4px;
+    }
+
+    .messagelist li.success {
+        background: #48BB78;
+        color: white;
+    }
+
+    .messagelist li.warning {
+        background: #ECC94B;
+        color: #744210;
+    }
+
+    .messagelist li.error {
+        background: #F56565;
+        color: white;
+    }
+
+    /* Dashboard */
+    .dashboard .module table th {
+        background: var(--primary);
+        color: var(--primary-fg);
+    }
+
+    .dashboard .module table td a:link,
+    .dashboard .module table td a:visited {
+        color: var(--accent);
+    }
+
+    /* Forms */
+    .module {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 1.5rem;
+    }
+
+    .form-row {
+        padding: 1rem;
+        border-bottom: 1px solid #edf2f7;
+    }
+
+    .aligned label {
+        color: var(--body-loud-color);
+        font-weight: 500;
+    }
+
+    /* List View */
+    #changelist {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    #changelist table {
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    #changelist table thead th {
+        background: var(--primary);
+        color: var(--primary-fg);
+        padding: 0.8rem;
+        font-weight: 600;
+        border: none;
+    }
+
+    #changelist table tbody tr:hover {
+        background: #EBF8FF;
+    }
+
+    #changelist table tbody td {
+        padding: 0.8rem;
+        border-bottom: 1px solid #edf2f7;
+    }
+
+    /* Pagination */
+    .paginator {
+        padding: 1rem;
+        background: white;
+        border-radius: 0 0 8px 8px;
+        border-top: 1px solid #edf2f7;
+    }
+
+    .paginator .this-page {
+        background: var(--primary);
+        color: var(--primary-fg);
+        padding: 0.3rem 0.8rem;
+        border-radius: 4px;
+    }
+
+    /* Custom Additions */
+    .object-tools {
+        margin-top: 1rem;
+    }
+
+    .object-tools a:link,
+    .object-tools a:visited {
+        background: var(--accent);
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+    }
+
+    .object-tools a:hover {
+        background: var(--secondary);
+    }
+
+    /* Filter */
+    #changelist-filter {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-left: 1.5rem;
+    }
+
+    #changelist-filter h2 {
+        background: var(--primary);
+        color: var(--primary-fg);
+        border-radius: 8px 8px 0 0;
+        padding: 0.8rem 1rem;
+    }
+
+    #changelist-filter h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 1rem;
+    }
+
+    #changelist-filter ul {
+        margin: 0;
+        padding: 0 1rem 1rem;
+        list-style: none;
+    }
+
+    #changelist-filter li {
+        margin: 0.3rem 0;
+    }
+</style>
+{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">
+    <a href="{% url 'admin:index' %}">
+        CareLink Administration
+    </a>
+</h1>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
