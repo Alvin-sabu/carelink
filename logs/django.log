@@ -36600,3 +36600,5 @@ INFO 2025-03-24 20:30:28,412 basehttp 21256 10436 "GET /carelink/api/patient/3/v
 INFO 2025-03-24 20:30:28,412 basehttp 21256 10436 "GET /carelink/api/patient/3/vitals/?period=year HTTP/1.1" 200 1109
 INFO 2025-03-24 20:33:51,584 autoreload 15796 14608 Watching for file changes with StatReloader
 INFO 2025-03-24 20:33:51,584 autoreload 15796 14608 Watching for file changes with StatReloader
+INFO 2025-03-24 21:30:23,689 autoreload 20040 15728 Watching for file changes with StatReloader
+INFO 2025-03-24 21:30:23,689 autoreload 20040 15728 Watching for file changes with StatReloader
