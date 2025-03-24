@@ -1,9 +1,6 @@
 name: Deploy Django App
 
 on:
-  push:
-    branches:
-      - main  # Runs on push to main branch
   workflow_dispatch:  # Allows manual trigger from GitHub UI
 
 jobs:
