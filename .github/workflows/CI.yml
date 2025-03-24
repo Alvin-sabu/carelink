@@ -23,6 +23,6 @@ jobs:
             sudo docker-compose -f carelinkup.yml down
             sudo docker build . -t carelink:latest
             sudo docker-compose -f carelinkup.yml up -d
-            docker image prune -f
+            sudo docker image prune -f
 
             
