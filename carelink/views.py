@@ -1348,11 +1348,11 @@ class CareRequestListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     context_object_name = 'care_requests'
     
     def test_func(self):
-        # Only allow admins and family members
-        return self.request.user.is_staff or self.request.user.user_type == 'FAMILY'
+        # Allow admins, caregivers, and family members
+        return self.request.user.is_staff or self.request.user.is_superuser or self.request.user.user_type in ['FAMILY', 'CAREGIVER', 'ADMIN']
     
     def get_queryset(self):
-        if self.request.user.is_staff:
+        if self.request.user.is_staff or self.request.user.is_superuser or self.request.user.user_type == 'ADMIN':
             # Admins see all pending requests
             return CareRequest.objects.filter(status='PENDING').order_by('-request_date')
         else:
@@ -1361,11 +1361,11 @@ class CareRequestListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        if self.request.user.is_staff:
+        if self.request.user.is_staff or self.request.user.is_superuser or self.request.user.user_type == 'ADMIN':
             # For admins, categorize by status
-            context['pending_requests'] = self.get_queryset()
-            context['approved_requests'] = CareRequest.objects.filter(status='APPROVED')
-            context['rejected_requests'] = CareRequest.objects.filter(status='REJECTED')
+            context['pending_requests'] = CareRequest.objects.filter(status='PENDING').order_by('-request_date')
+            context['approved_requests'] = CareRequest.objects.filter(status='APPROVED').order_by('-request_date')
+            context['rejected_requests'] = CareRequest.objects.filter(status='REJECTED').order_by('-request_date')
         else:
             # For family members, show their requests by status
             context['pending_requests'] = self.get_queryset().filter(status='PENDING')

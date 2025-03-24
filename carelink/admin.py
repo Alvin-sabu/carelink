@@ -4,7 +4,8 @@ from django.utils import timezone
 from django.http import HttpResponseRedirect
 from .models import (
     User, Patient, HealthTip, IssueReport, IssueResponse,
-    HealthDocument, Task, MedicationLog, Medication, MedicationSchedule, HealthLog, Notification
+    HealthDocument, Task, MedicationLog, Medication, MedicationSchedule, HealthLog, Notification,
+    CareRequest
 )
 
 class CareLinkAdminSite(admin.AdminSite):
@@ -85,6 +86,43 @@ class IssueReportAdmin(admin.ModelAdmin):
     def reported_by_name(self, obj):
         return obj.reported_by.get_full_name()
     reported_by_name.short_description = 'Reported By'
+
+@admin.register(CareRequest, site=admin_site)
+class CareRequestAdmin(admin.ModelAdmin):
+    list_display = ['id', 'get_patient_name', 'request_type', 'service_type', 'status', 'request_date', 'caregiver']
+    list_filter = ['status', 'request_type', 'service_type', 'request_date']
+    search_fields = ['patient_name', 'patient_last_name', 'patient_condition', 'notes']
+    readonly_fields = ['request_date']
+    
+    fieldsets = [
+        ('Request Information', {
+            'fields': [
+                'user', 'patient', 'request_type', 'service_type', 'status', 'request_date'
+            ]
+        }),
+        ('Patient Information', {
+            'fields': [
+                'patient_name', 'patient_last_name', 'patient_date_of_birth',
+                'patient_condition', 'emergency_contact', 'patient_address'
+            ],
+        }),
+        ('Service Details', {
+            'fields': [
+                'requested_date', 'preferred_time', 'notes', 'start_date', 'caregiver'
+            ],
+        }),
+    ]
+    
+    def get_patient_name(self, obj):
+        if obj.patient:
+            return obj.patient.get_full_name()
+        return f"{obj.patient_name} {obj.patient_last_name}"
+    get_patient_name.short_description = 'Patient'
+    
+    def save_model(self, request, obj, form, change):
+        if obj.status == 'APPROVED' and not obj.caregiver:
+            obj.caregiver = request.user
+        super().save_model(request, obj, form, change)
 
 # Register other models
 admin_site.register(User)

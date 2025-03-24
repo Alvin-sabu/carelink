@@ -36602,3 +36602,85 @@ INFO 2025-03-24 20:33:51,584 autoreload 15796 14608 Watching for file changes wi
 INFO 2025-03-24 20:33:51,584 autoreload 15796 14608 Watching for file changes with StatReloader
 INFO 2025-03-24 21:30:23,689 autoreload 20040 15728 Watching for file changes with StatReloader
 INFO 2025-03-24 21:30:23,689 autoreload 20040 15728 Watching for file changes with StatReloader
+INFO 2025-03-24 22:24:36,104 autoreload 14892 11900 Watching for file changes with StatReloader
+INFO 2025-03-24 22:24:36,104 autoreload 14892 11900 Watching for file changes with StatReloader
+INFO 2025-03-24 22:39:01,162 autoreload 8712 11596 Watching for file changes with StatReloader
+INFO 2025-03-24 22:39:01,162 autoreload 8712 11596 Watching for file changes with StatReloader
+INFO 2025-03-24 22:40:51,141 basehttp 8712 9092 "GET / HTTP/1.1" 302 0
+INFO 2025-03-24 22:40:51,141 basehttp 8712 9092 "GET / HTTP/1.1" 302 0
+INFO 2025-03-24 22:40:51,378 basehttp 8712 9092 "GET /carelink/family/dashboard/ HTTP/1.1" 200 29394
+INFO 2025-03-24 22:40:51,378 basehttp 8712 9092 "GET /carelink/family/dashboard/ HTTP/1.1" 200 29394
+INFO 2025-03-24 22:40:53,010 autoreload 8712 11596 D:\carelink\carelink\carelink\carelink_project\carelink\views.py changed, reloading.
+INFO 2025-03-24 22:40:53,010 autoreload 8712 11596 D:\carelink\carelink\carelink\carelink_project\carelink\views.py changed, reloading.
+INFO 2025-03-24 22:40:55,137 autoreload 12140 17092 Watching for file changes with StatReloader
+INFO 2025-03-24 22:40:55,137 autoreload 12140 17092 Watching for file changes with StatReloader
+INFO 2025-03-24 22:41:02,216 basehttp 12140 21156 "POST /carelink/accounts/logout/ HTTP/1.1" 302 0
+INFO 2025-03-24 22:41:02,216 basehttp 12140 21156 "POST /carelink/accounts/logout/ HTTP/1.1" 302 0
+INFO 2025-03-24 22:41:02,252 basehttp 12140 21156 "GET /carelink/ HTTP/1.1" 200 33894
+INFO 2025-03-24 22:41:02,252 basehttp 12140 21156 "GET /carelink/ HTTP/1.1" 200 33894
+INFO 2025-03-24 22:41:09,677 basehttp 12140 2076 "GET /admin/ HTTP/1.1" 302 0
+INFO 2025-03-24 22:41:09,677 basehttp 12140 2076 "GET /admin/ HTTP/1.1" 302 0
+INFO 2025-03-24 22:41:09,905 basehttp 12140 2076 "GET /admin/login/?next=/admin/ HTTP/1.1" 200 8198
+INFO 2025-03-24 22:41:09,905 basehttp 12140 2076 "GET /admin/login/?next=/admin/ HTTP/1.1" 200 8198
+WARNING 2025-03-24 22:41:10,054 log 12140 2076 Not Found: /favicon.ico
+WARNING 2025-03-24 22:41:10,054 log 12140 2076 Not Found: /favicon.ico
+WARNING 2025-03-24 22:41:10,060 basehttp 12140 2076 "GET /favicon.ico HTTP/1.1" 404 22664
+WARNING 2025-03-24 22:41:10,060 basehttp 12140 2076 "GET /favicon.ico HTTP/1.1" 404 22664
+INFO 2025-03-24 22:41:12,978 basehttp 12140 19200 "POST /admin/login/?next=/admin/ HTTP/1.1" 200 8361
+INFO 2025-03-24 22:41:12,978 basehttp 12140 19200 "POST /admin/login/?next=/admin/ HTTP/1.1" 200 8361
+INFO 2025-03-24 22:41:17,719 basehttp 12140 3336 "POST /admin/login/?next=/admin/ HTTP/1.1" 302 0
+INFO 2025-03-24 22:41:17,719 basehttp 12140 3336 "POST /admin/login/?next=/admin/ HTTP/1.1" 302 0
+INFO 2025-03-24 22:41:17,804 basehttp 12140 3336 "GET /admin/ HTTP/1.1" 200 20320
+INFO 2025-03-24 22:41:17,804 basehttp 12140 3336 "GET /admin/ HTTP/1.1" 200 20320
+INFO 2025-03-24 22:41:43,558 basehttp 12140 16348 "GET /admin/carelink/patient/ HTTP/1.1" 200 18809
+INFO 2025-03-24 22:41:43,558 basehttp 12140 16348 "GET /admin/carelink/patient/ HTTP/1.1" 200 18809
+INFO 2025-03-24 22:41:43,667 basehttp 12140 20856 "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+INFO 2025-03-24 22:41:43,667 basehttp 12140 20856 "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+INFO 2025-03-24 22:41:43,971 basehttp 12140 3500 "GET /static/admin/js/jquery.init.js HTTP/1.1" 200 347
+INFO 2025-03-24 22:41:43,971 basehttp 12140 3500 "GET /static/admin/js/jquery.init.js HTTP/1.1" 200 347
+INFO 2025-03-24 22:41:43,971 basehttp 12140 16348 "GET /static/admin/css/changelists.css HTTP/1.1" 200 6878
+INFO 2025-03-24 22:41:43,971 basehttp 12140 16348 "GET /static/admin/css/changelists.css HTTP/1.1" 200 6878
+INFO 2025-03-24 22:41:43,982 basehttp 12140 16348 "GET /static/admin/js/prepopulate.js HTTP/1.1" 200 1531
+INFO 2025-03-24 22:41:43,982 basehttp 12140 16348 "GET /static/admin/js/prepopulate.js HTTP/1.1" 200 1531
+INFO 2025-03-24 22:41:44,003 basehttp 12140 7180 "GET /static/admin/js/core.js HTTP/1.1" 200 6208
+INFO 2025-03-24 22:41:44,003 basehttp 12140 7180 "GET /static/admin/js/core.js HTTP/1.1" 200 6208
+INFO 2025-03-24 22:41:44,012 basehttp 12140 3500 "GET /static/admin/js/urlify.js HTTP/1.1" 200 7887
+INFO 2025-03-24 22:41:44,012 basehttp 12140 3500 "GET /static/admin/js/urlify.js HTTP/1.1" 200 7887
+INFO 2025-03-24 22:41:44,017 basehttp 12140 12872 "GET /static/admin/js/admin/RelatedObjectLookups.js HTTP/1.1" 200 9097
+INFO 2025-03-24 22:41:44,017 basehttp 12140 12872 "GET /static/admin/js/admin/RelatedObjectLookups.js HTTP/1.1" 200 9097
+INFO 2025-03-24 22:41:44,049 basehttp 12140 20856 "GET /static/admin/js/actions.js HTTP/1.1" 200 8076
+INFO 2025-03-24 22:41:44,049 basehttp 12140 20856 "GET /static/admin/js/actions.js HTTP/1.1" 200 8076
+INFO 2025-03-24 22:41:44,103 basehttp 12140 20468 "GET /static/admin/js/vendor/jquery/jquery.js HTTP/1.1" 200 285314
+INFO 2025-03-24 22:41:44,103 basehttp 12140 20468 "GET /static/admin/js/vendor/jquery/jquery.js HTTP/1.1" 200 285314
+INFO 2025-03-24 22:41:44,146 basehttp 12140 20468 "GET /static/admin/js/filters.js HTTP/1.1" 200 978
+INFO 2025-03-24 22:41:44,146 basehttp 12140 20468 "GET /static/admin/js/filters.js HTTP/1.1" 200 978
+INFO 2025-03-24 22:41:44,202 basehttp 12140 16348 "GET /static/admin/js/vendor/xregexp/xregexp.js HTTP/1.1" 200 325171
+INFO 2025-03-24 22:41:44,202 basehttp 12140 16348 "GET /static/admin/js/vendor/xregexp/xregexp.js HTTP/1.1" 200 325171
+INFO 2025-03-24 22:41:48,711 basehttp 12140 8612 "GET /admin/carelink/patient/ HTTP/1.1" 200 18809
+INFO 2025-03-24 22:41:48,711 basehttp 12140 8612 "GET /admin/carelink/patient/ HTTP/1.1" 200 18809
+INFO 2025-03-24 22:41:48,733 basehttp 12140 8612 "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+INFO 2025-03-24 22:41:48,733 basehttp 12140 8612 "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+INFO 2025-03-24 22:43:01,504 autoreload 12140 17092 D:\carelink\carelink\carelink\carelink_project\carelink\admin.py changed, reloading.
+INFO 2025-03-24 22:43:01,504 autoreload 12140 17092 D:\carelink\carelink\carelink\carelink_project\carelink\admin.py changed, reloading.
+INFO 2025-03-24 22:43:03,779 autoreload 20088 13140 Watching for file changes with StatReloader
+INFO 2025-03-24 22:43:03,779 autoreload 20088 13140 Watching for file changes with StatReloader
+INFO 2025-03-24 22:43:17,974 basehttp 20088 15852 "GET /admin/carelink/patient/ HTTP/1.1" 200 19266
+INFO 2025-03-24 22:43:17,974 basehttp 20088 15852 "GET /admin/carelink/patient/ HTTP/1.1" 200 19266
+INFO 2025-03-24 22:43:18,006 basehttp 20088 15852 "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+INFO 2025-03-24 22:43:18,006 basehttp 20088 15852 "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+INFO 2025-03-24 22:43:21,702 basehttp 20088 15852 "GET /admin/carelink/carerequest/ HTTP/1.1" 200 24934
+INFO 2025-03-24 22:43:21,702 basehttp 20088 15852 "GET /admin/carelink/carerequest/ HTTP/1.1" 200 24934
+INFO 2025-03-24 22:43:21,728 basehttp 20088 15852 "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+INFO 2025-03-24 22:43:21,728 basehttp 20088 15852 "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+INFO 2025-03-24 22:43:21,867 basehttp 20088 9720 "GET /static/admin/img/search.svg HTTP/1.1" 200 458
+INFO 2025-03-24 22:43:21,867 basehttp 20088 9720 "GET /static/admin/img/search.svg HTTP/1.1" 200 458
+INFO 2025-03-24 22:43:21,920 basehttp 20088 15852 "GET /static/admin/img/icon-viewlink.svg HTTP/1.1" 200 581
+INFO 2025-03-24 22:43:21,920 basehttp 20088 15852 "GET /static/admin/img/icon-viewlink.svg HTTP/1.1" 200 581
+INFO 2025-03-24 22:43:35,320 basehttp 20088 20668 "GET /admin/carelink/issueresponse/ HTTP/1.1" 200 16932
+INFO 2025-03-24 22:43:35,320 basehttp 20088 20668 "GET /admin/carelink/issueresponse/ HTTP/1.1" 200 16932
+INFO 2025-03-24 22:43:35,350 basehttp 20088 20668 "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+INFO 2025-03-24 22:43:35,350 basehttp 20088 20668 "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+INFO 2025-03-24 22:43:37,587 basehttp 20088 2220 "POST /admin/logout/ HTTP/1.1" 302 0
+INFO 2025-03-24 22:43:37,587 basehttp 20088 2220 "POST /admin/logout/ HTTP/1.1" 302 0
+INFO 2025-03-24 22:43:37,635 basehttp 20088 2220 "GET /carelink/accounts/login/ HTTP/1.1" 200 17271
+INFO 2025-03-24 22:43:37,635 basehttp 20088 2220 "GET /carelink/accounts/login/ HTTP/1.1" 200 17271
