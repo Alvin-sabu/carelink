@@ -19,7 +19,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd /home/ubuntu/carelink
-            git pull origin main
+            git pull 
             sudo docker-compose -f carelinkup.yml down
             sudo  docker image prune -f
             sudo docker build . -t carelink:latest
